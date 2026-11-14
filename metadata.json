@@ -1,0 +1,6 @@
+{
+  "name": "SPHEREx Time-Domain Explorer",
+  "description": "Explorador científico de recortes temporales de SPHEREx para detección de movimiento propio y variabilidad en el infrarrojo cercano (NASA Space Apps 2026).",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
