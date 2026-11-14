@@ -37,6 +37,8 @@ interface BottomDockProps {
   onSpeedChange: (speed: number) => void;
   currentFrame: DecodedSpherexFrame | null;
   flagBits: FlagBitsMap;
+  usingDefaultFlagBits: boolean;
+  predictedOutOfBounds: boolean;
   activeTarget: TargetPreset | null;
 }
 
@@ -62,6 +64,8 @@ export const BottomDock: React.FC<BottomDockProps> = ({
   onSpeedChange,
   currentFrame,
   flagBits,
+  usingDefaultFlagBits,
+  predictedOutOfBounds,
   activeTarget,
 }) => {
   const frameFlagsSummary = currentFrame
@@ -279,7 +283,18 @@ export const BottomDock: React.FC<BottomDockProps> = ({
                 ▲ {t.persistenceAlertLabel}
               </span>
             )}
+            {predictedOutOfBounds && (
+              <span className="text-[11px] font-mono text-amber-300 font-semibold">
+                ↗ {t.predictedOutOfBoundsLabel}
+              </span>
+            )}
           </div>
+
+          {usingDefaultFlagBits && currentFrame && (
+            <div className="bg-amber-950/30 border border-amber-800/60 rounded px-2.5 py-1 text-[11px] text-amber-200">
+              ▲ {t.defaultFlagBitsWarning}
+            </div>
+          )}
 
           {currentFrame ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 font-mono tabular-nums text-[11px] bg-[#07090E] border border-slate-800 rounded px-3 py-2">
@@ -337,9 +352,16 @@ export const BottomDock: React.FC<BottomDockProps> = ({
         </div>
 
         <div className="lg:col-span-5 flex flex-col gap-1">
-          <div className="font-semibold text-slate-200">
-            {t.targetNotesTitle}
-            {activeTarget ? ` · ${lang === 'es' ? activeTarget.nameEs : activeTarget.nameEn}` : ''}
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-semibold text-slate-200">
+              {t.targetNotesTitle}
+              {activeTarget ? ` · ${lang === 'es' ? activeTarget.nameEs : activeTarget.nameEn}` : ''}
+            </span>
+            {activeTarget && (
+              <span className="text-[10px] font-mono tabular-nums text-slate-400">
+                DR1:{activeTarget.irsaCoverage.dr1} / QR3:{activeTarget.irsaCoverage.qr3}
+              </span>
+            )}
           </div>
           <div className="bg-[#07090E] border border-slate-800 rounded px-3 py-2 text-[11px] text-slate-300 leading-relaxed">
             {activeTarget ? (

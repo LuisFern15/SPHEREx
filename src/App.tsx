@@ -6,12 +6,15 @@ import { ProvenanceBanner } from './components/ProvenanceBanner';
 import { RightPanel } from './components/RightPanel';
 import { TopBar } from './components/TopBar';
 import {
+  AVAILABLE_COLLECTIONS,
   DEFAULT_BAND_CONTRAST,
-  DEFAULT_FLAG_BITS,
   TARGET_PRESETS,
   dateToJulianYear,
+  mjdToJulianYear,
   propagatePosition,
 } from './data/targets';
+import { resolvePredictedPixel } from './utils/coordinates';
+import { DEFAULT_FLAG_BITS } from './utils/flags';
 import { TRANSLATIONS } from './i18n/translations';
 import {
   BandContrast,
@@ -29,7 +32,13 @@ import {
   groupFramesIntoEpochs,
   hasWavelengthSpread,
 } from './utils/epochs';
-import { clampFieldSize, getInitialUrlState, syncUrlHash } from './utils/urlHash';
+import {
+  clampFieldSize,
+  colToCollection,
+  collectionToCol,
+  getInitialUrlState,
+  syncUrlHash,
+} from './utils/urlHash';
 
 function angularSepArcsec(ra1: number, dec1: number, ra2: number, dec2: number): number {
   const cosDec = Math.cos(((dec1 + dec2) * 0.5 * Math.PI) / 180);
@@ -90,6 +99,8 @@ export default function App() {
   const [blinkShowRef, setBlinkShowRef] = useState(false);
   const [allowUnsafeDiff, setAllowUnsafeDiff] = useState(false);
 
+  const activeCollection = colToCollection(urlState.col);
+
   // API / Query result state
   const [loading, setLoading] = useState(true);
   const [retryNonce, setRetryNonce] = useState(0);
@@ -98,12 +109,13 @@ export default function App() {
       ra: urlState.ra,
       dec: urlState.dec,
       size_arcsec: urlState.size,
-      collection: urlState.collection,
+      collection: activeCollection,
     },
     pixel_scale_arcsec: 6.15,
     provenance: urlState.sim === 1 ? 'simulated' : 'live',
     cached: false,
     flag_bits: { ...DEFAULT_FLAG_BITS },
+    usingDefaultFlagBits: true,
     catalog_sources: [],
     frames: [],
     notes: [],
@@ -150,7 +162,7 @@ export default function App() {
       ra: urlState.ra,
       dec: urlState.dec,
       size: urlState.size,
-      collection: urlState.collection,
+      collection: activeCollection,
       simMode: urlState.sim === 1,
       signal: controller.signal,
     }).then((result) => {
@@ -160,7 +172,7 @@ export default function App() {
     });
 
     return () => controller.abort();
-  }, [urlState.ra, urlState.dec, urlState.size, urlState.collection, urlState.sim, retryNonce]);
+  }, [urlState.ra, urlState.dec, urlState.size, activeCollection, urlState.sim, retryNonce]);
 
   const activeTarget = useMemo(
     () => findMatchingTarget(urlState.ra, urlState.dec),
@@ -168,9 +180,9 @@ export default function App() {
   );
 
   const availableCollections = useMemo(() => {
-    const base = activeTarget?.collections ?? ['spherex_qr3'];
-    return base.includes(urlState.collection) ? base : [urlState.collection, ...base];
-  }, [activeTarget, urlState.collection]);
+    const base: string[] = [...AVAILABLE_COLLECTIONS];
+    return base.includes(activeCollection) ? base : [activeCollection, ...base];
+  }, [activeCollection]);
 
   const epochs = useMemo(
     () => groupFramesIntoEpochs(queryResult.frames, queryResult.flag_bits),
@@ -254,7 +266,7 @@ export default function App() {
       dec: Number(propagated.dec.toFixed(6)),
       size: clampFieldSize(target.defaultSize),
       band: targetBand,
-      collection: target.defaultCollection,
+      col: collectionToCol(target.defaultCollection),
       min: targetContrast.min,
       max: targetContrast.max,
       i: 0,
@@ -350,6 +362,22 @@ export default function App() {
     [timelineFrames]
   );
 
+  const predictedResolution = useMemo(
+    () =>
+      resolvePredictedPixel(
+        currentFrame,
+        activeTarget,
+        mjdToJulianYear,
+        propagatePosition
+      ),
+    [currentFrame, activeTarget]
+  );
+
+  const handleChangeCollection = useCallback((nextColName: string) => {
+    setPlaying(false);
+    setUrlState((prev) => ({ ...prev, col: collectionToCol(nextColName), i: 0 }));
+  }, []);
+
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#07090E] text-slate-100">
       <TopBar
@@ -359,7 +387,7 @@ export default function App() {
         ra={urlState.ra}
         dec={urlState.dec}
         size={urlState.size}
-        collection={urlState.collection}
+        collection={activeCollection}
         availableCollections={availableCollections}
         activeTargetId={activeTarget?.id ?? null}
         simMode={urlState.sim === 1}
@@ -371,9 +399,7 @@ export default function App() {
         onChangeSize={(nextSize) =>
           setUrlState((prev) => ({ ...prev, size: clampFieldSize(nextSize), i: 0 }))
         }
-        onChangeCollection={(nextCol) =>
-          setUrlState((prev) => ({ ...prev, collection: nextCol, i: 0 }))
-        }
+        onChangeCollection={handleChangeCollection}
       />
 
       <ProvenanceBanner
@@ -417,12 +443,18 @@ export default function App() {
           activeTarget={activeTarget}
           pixelScaleArcsec={queryResult.pixel_scale_arcsec}
           sizeArcsec={urlState.size}
+          activeCollection={activeCollection}
+          totalFramesCount={queryResult.frames.length}
+          onSwitchCollection={handleChangeCollection}
           onHoverPixel={setHoveredPixel}
         />
 
         <RightPanel
           t={t}
           lang={lang}
+          collection={activeCollection}
+          onChangeCollection={handleChangeCollection}
+          activeTarget={activeTarget}
           band={urlState.band}
           min={activeContrast.min}
           max={activeContrast.max}
@@ -488,6 +520,8 @@ export default function App() {
         onSpeedChange={(s) => setUrlState((prev) => ({ ...prev, speed: s }))}
         currentFrame={currentFrame}
         flagBits={queryResult.flag_bits}
+        usingDefaultFlagBits={queryResult.usingDefaultFlagBits}
+        predictedOutOfBounds={predictedResolution.outOfBounds}
         activeTarget={activeTarget}
       />
     </div>

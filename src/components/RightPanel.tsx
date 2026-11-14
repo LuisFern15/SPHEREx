@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, Layers, Pin, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import { AVAILABLE_COLLECTIONS } from '../data/targets';
 import { TranslationStrings } from '../i18n/translations';
 import { getColormapPreviewGradient } from '../rendering/colormaps';
 import {
@@ -7,12 +8,16 @@ import {
   CompareMode,
   DecodedSpherexFrame,
   Language,
+  TargetPreset,
 } from '../types/spherex';
 import { HoveredPixelInfo } from './CutoutViewport';
 
 interface RightPanelProps {
   t: TranslationStrings;
   lang: Language;
+  collection: string;
+  onChangeCollection: (col: string) => void;
+  activeTarget: TargetPreset | null;
   band: number;
   min: number;
   max: number;
@@ -57,6 +62,9 @@ const COLORMAPS: { id: ColormapName; labelEs: string; labelEn: string }[] = [
 export const RightPanel: React.FC<RightPanelProps> = ({
   t,
   lang,
+  collection,
+  onChangeCollection,
+  activeTarget,
   band,
   min,
   max,
@@ -142,6 +150,37 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-4 text-xs">
+          {/* IRSA Collection Selector & Verified Coverage */}
+          <section className="flex flex-col gap-2 border-b border-slate-800/80 pb-3.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-semibold text-slate-200">{t.collectionLabel}</span>
+              <div className="grid grid-cols-2 gap-1 bg-[#07090E] p-0.5 rounded border border-slate-800">
+                {AVAILABLE_COLLECTIONS.map((col) => (
+                  <button
+                    key={col}
+                    type="button"
+                    onClick={() => onChangeCollection(col)}
+                    className={`px-2 py-1 rounded font-mono text-[11px] transition-colors cursor-pointer ${
+                      collection === col
+                        ? 'bg-cyan-600 text-slate-950 font-semibold'
+                        : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    {col}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {activeTarget && (
+              <div className="flex items-center justify-between text-[11px] font-mono tabular-nums text-slate-400 bg-[#07090E] border border-slate-800/80 rounded px-2.5 py-1">
+                <span>{t.irsaCoverageLabel}</span>
+                <span className="text-slate-200">
+                  DR1: {activeTarget.irsaCoverage.dr1} · QR3: {activeTarget.irsaCoverage.qr3}
+                </span>
+              </div>
+            )}
+          </section>
+
           {/* Shared Per-Band asinh Contrast */}
           <section className="flex flex-col gap-2.5 border-b border-slate-800/80 pb-3.5">
             <div className="flex items-center justify-between gap-2">
@@ -289,11 +328,17 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             </label>
 
             {showFlags && (
-              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] pl-1 pb-1">
-                <span className="text-rose-400 font-mono">■ {t.saturationTag}</span>
-                <span className="text-amber-400 font-mono">□ {t.persistenceTag}</span>
-                <span className="text-cyan-300 font-mono">□ SOURCE</span>
-                <span className="text-fuchsia-400 font-mono">× BAD/DISCON</span>
+              <div className="flex flex-col gap-1 text-[11px] pl-1 pb-1">
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                  <span className="text-rose-400 font-mono">■ OVERFLOW/NONLINEAR</span>
+                  <span className="text-amber-400 font-mono">□ PERSIST</span>
+                  <span className="text-cyan-300 font-mono">□ SOURCE</span>
+                  <span className="text-fuchsia-400 font-mono">× NONFUNC/BAD</span>
+                </div>
+                <div className="text-[10px] text-slate-400 leading-snug">
+                  <div>{t.transientFlagHelp}</div>
+                  <div>{t.sourceFlagHelp}</div>
+                </div>
               </div>
             )}
 

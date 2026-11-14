@@ -1,5 +1,26 @@
 import { FlagBitsMap } from '../types/spherex';
 
+/**
+ * SPHEREx Explanatory Supplement v1.0, Table 9 symbolic bitmask names.
+ * Only used as fallback when an API response omits `flag_bits`.
+ */
+export const DEFAULT_FLAG_BITS: FlagBitsMap = {
+  TRANSIENT: 0,
+  OVERFLOW: 1,
+  SUR_ERROR: 2,
+  NONFUNC: 6,
+  DICHROIC: 7,
+  MISSING_DATA: 9,
+  HOT: 10,
+  COLD: 11,
+  FULLSAMPLE: 12,
+  PHANMISS: 14,
+  NONLINEAR: 15,
+  PERSIST: 17,
+  OUTLIER: 19,
+  SOURCE: 21,
+};
+
 export type FlagCategory = 'saturation' | 'persistence' | 'bad' | 'source' | 'other';
 
 export interface DecodedFlagEntry {
@@ -17,24 +38,32 @@ export interface FrameFlagSummary {
 
 export function classifyFlagName(name: string): FlagCategory {
   const upper = name.toUpperCase();
-  if (upper.includes('SAT') || upper.includes('OVERFLOW') || upper.includes('NONLIN')) {
+  if (upper === 'OVERFLOW' || upper === 'NONLINEAR') {
     return 'saturation';
   }
-  if (upper.includes('PERSIST')) {
+  if (upper === 'PERSIST') {
     return 'persistence';
   }
   if (
-    upper.includes('NONFUNC') ||
-    upper.includes('DEAD') ||
-    upper.includes('HOT') ||
-    upper.includes('BAD') ||
-    upper.includes('DISCON') ||
-    upper.includes('MISSING')
+    upper === 'NONFUNC' ||
+    upper === 'DICHROIC' ||
+    upper === 'COLD' ||
+    upper === 'HOT' ||
+    upper === 'PHANMISS' ||
+    upper === 'MISSING_DATA'
   ) {
     return 'bad';
   }
-  if (upper === 'SOURCE' || upper.includes('SRC')) {
+  if (upper === 'SOURCE') {
     return 'source';
+  }
+  if (
+    upper === 'TRANSIENT' ||
+    upper === 'SUR_ERROR' ||
+    upper === 'FULLSAMPLE' ||
+    upper === 'OUTLIER'
+  ) {
+    return 'other';
   }
   return 'other';
 }
@@ -96,7 +125,11 @@ export function summarizeFrameFlags(
   return summaries;
 }
 
-export function isBitSet(maskValue: number, flagBits: FlagBitsMap, matcher: (cat: FlagCategory) => boolean): boolean {
+export function isBitSet(
+  maskValue: number,
+  flagBits: FlagBitsMap,
+  matcher: (cat: FlagCategory) => boolean
+): boolean {
   if (!maskValue) return false;
   for (const [name, bit] of Object.entries(flagBits)) {
     if (bit >= 0 && bit < 32 && ((maskValue >>> bit) & 1) === 1) {

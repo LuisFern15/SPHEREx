@@ -14,8 +14,8 @@ import {
   ProvenanceState,
   TargetPreset,
 } from '../types/spherex';
-import { pixelToSkyLinear, skyToPixelLinear } from '../utils/coordinates';
-import { DecodedFlagEntry, classifyFlagName, decodePixelFlags } from '../utils/flags';
+import { pixelToSkyLinear, resolvePredictedPixel, skyToPixelLinear } from '../utils/coordinates';
+import { DecodedFlagEntry, decodePixelFlags } from '../utils/flags';
 
 export interface HoveredPixelInfo {
   x: number;
@@ -57,6 +57,9 @@ interface CutoutViewportProps {
   activeTarget: TargetPreset | null;
   pixelScaleArcsec: number;
   sizeArcsec: number;
+  activeCollection: string;
+  totalFramesCount: number;
+  onSwitchCollection: (col: string) => void;
   onHoverPixel: (info: HoveredPixelInfo | null) => void;
 }
 
@@ -91,6 +94,9 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
   activeTarget,
   pixelScaleArcsec,
   sizeArcsec,
+  activeCollection,
+  totalFramesCount,
+  onSwitchCollection,
   onHoverPixel,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -187,20 +193,19 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     return { x: sx, y: sy };
   };
 
-  // Compute query_xy and predicted_xy (backend-first, client WCS propagation fallback)
+  // Compute query_xy (fixed center) and predicted_xy (at individual frame.mjd, with out-of-bounds edge arrow)
   const reticles = useMemo(() => {
     if (!displayedFrame || !transform) return null;
     const [imgH, imgW] = displayedFrame.shape;
     const fallbackCenter: [number, number] = [(imgW - 1) / 2, (imgH - 1) / 2];
 
     const queryPx = displayedFrame.query_xy ?? displayedFrame.target_xy ?? fallbackCenter;
-    let predictedPx = displayedFrame.predicted_xy ?? null;
-
-    if (!predictedPx && activeTarget) {
-      const obsYear = mjdToJulianYear(displayedFrame.mjd);
-      const prop = propagatePosition(activeTarget, obsYear);
-      predictedPx = skyToPixelLinear(prop.ra, prop.dec, displayedFrame.wcs);
-    }
+    const { px: predictedPx, outOfBounds: predictedOutOfBounds } = resolvePredictedPixel(
+      displayedFrame,
+      activeTarget,
+      mjdToJulianYear,
+      propagatePosition
+    );
 
     let ref2010Px: [number, number] | null = null;
     if (activeTarget?.referencePosition) {
@@ -211,9 +216,34 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       );
     }
 
+    const queryScreen = toScreenCoords(queryPx[0], queryPx[1], imgH);
+    const predictedScreen = predictedPx
+      ? toScreenCoords(predictedPx[0], predictedPx[1], imgH)
+      : null;
+
+    let outArrow: { x: number; y: number; angleDeg: number } | null = null;
+    if (predictedOutOfBounds && predictedScreen) {
+      const cx = transform.drawX + transform.drawW * 0.5;
+      const cy = transform.drawY + transform.drawH * 0.5;
+      const dx = predictedScreen.x - cx;
+      const dy = predictedScreen.y - cy;
+      const halfW = Math.max(8, transform.drawW * 0.5 - 6);
+      const halfH = Math.max(8, transform.drawH * 0.5 - 6);
+      const scaleX = Math.abs(dx) > 1e-6 ? halfW / Math.abs(dx) : Infinity;
+      const scaleY = Math.abs(dy) > 1e-6 ? halfH / Math.abs(dy) : Infinity;
+      const tEdge = Math.min(scaleX, scaleY, 1);
+      outArrow = {
+        x: cx + dx * tEdge,
+        y: cy + dy * tEdge,
+        angleDeg: (Math.atan2(dy, dx) * 180) / Math.PI,
+      };
+    }
+
     return {
-      queryScreen: toScreenCoords(queryPx[0], queryPx[1], imgH),
-      predictedScreen: predictedPx ? toScreenCoords(predictedPx[0], predictedPx[1], imgH) : null,
+      queryScreen,
+      predictedScreen,
+      predictedOutOfBounds,
+      outArrow,
       ref2010Screen: ref2010Px ? toScreenCoords(ref2010Px[0], ref2010Px[1], imgH) : null,
       imgH,
       imgW,
@@ -465,7 +495,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
                 </g>
               )}
 
-              {reticles.predictedScreen && (
+              {reticles.predictedScreen && !reticles.predictedOutOfBounds && (
                 <g>
                   <polygon
                     points={`${reticles.predictedScreen.x},${reticles.predictedScreen.y - 9} ${
@@ -476,6 +506,19 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
                     fill="none"
                     stroke="#FBBF24"
                     strokeWidth={1.5}
+                  />
+                </g>
+              )}
+
+              {reticles.predictedOutOfBounds && reticles.outArrow && (
+                <g
+                  transform={`translate(${reticles.outArrow.x}, ${reticles.outArrow.y}) rotate(${reticles.outArrow.angleDeg})`}
+                >
+                  <polygon
+                    points="8,0 -6,-6 -3,0 -6,6"
+                    fill="#FBBF24"
+                    stroke="#07090E"
+                    strokeWidth={0.8}
                   />
                 </g>
               )}
@@ -577,7 +620,38 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
         </div>
       )}
 
-      {!loading && provenance !== 'error' && !displayedFrame && (
+      {!loading && provenance !== 'error' && totalFramesCount === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#07090E]/90">
+          <div className="max-w-md border border-amber-700/70 bg-[#0F141F] rounded p-5 flex flex-col gap-3">
+            <div className="text-sm font-semibold text-amber-300">
+              ▲ {t.emptyCollectionTitle} ({activeCollection})
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">{t.emptyCollectionBody}</p>
+            {activeTarget && (
+              <div className="text-[11px] font-mono tabular-nums text-slate-400">
+                {t.irsaCoverageLabel}: DR1 {activeTarget.irsaCoverage.dr1} · QR3{' '}
+                {activeTarget.irsaCoverage.qr3}
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() =>
+                  onSwitchCollection(
+                    activeCollection === 'spherex_qr3' ? 'spherex_dr1' : 'spherex_qr3'
+                  )
+                }
+                className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-xs font-semibold rounded transition-colors cursor-pointer"
+              >
+                {t.switchCollectionButton}{' '}
+                {activeCollection === 'spherex_qr3' ? 'spherex_dr1' : 'spherex_qr3'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!loading && provenance !== 'error' && totalFramesCount > 0 && !displayedFrame && (
         <div className="absolute inset-0 flex items-center justify-center p-6 pointer-events-none">
           <div className="border border-slate-800 bg-[#0F141F]/95 rounded px-4 py-3 text-xs text-slate-300">
             {t.noDataTitle}

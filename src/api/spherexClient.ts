@@ -1,4 +1,4 @@
-import { DEFAULT_FLAG_BITS, TARGET_PRESETS } from '../data/targets';
+import { TARGET_PRESETS } from '../data/targets';
 import {
   CatalogSource,
   DecodedSpherexFrame,
@@ -7,6 +7,7 @@ import {
   RawSpherexFrame,
 } from '../types/spherex';
 import { decodeBase64Float32LE, decodeBase64Uint32LE } from '../utils/binaryDecode';
+import { DEFAULT_FLAG_BITS } from '../utils/flags';
 import { generateSimulatedCutouts } from './devSimulator';
 
 const API_BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
@@ -85,10 +86,10 @@ export async function fetchFrames(params: {
       throw new Error('Malformed API payload: missing frames array.');
     }
 
-    const flagBits: FlagBitsMap =
-      raw.flag_bits && Object.keys(raw.flag_bits).length > 0
-        ? raw.flag_bits
-        : { ...DEFAULT_FLAG_BITS };
+    const hasHeaderFlagBits = Boolean(raw.flag_bits && Object.keys(raw.flag_bits).length > 0);
+    const flagBits: FlagBitsMap = hasHeaderFlagBits
+      ? raw.flag_bits!
+      : { ...DEFAULT_FLAG_BITS };
 
     const decodedFrames: DecodedSpherexFrame[] = raw.frames.map((frame) => {
       const [h, w] = frame.shape;
@@ -114,6 +115,7 @@ export async function fetchFrames(params: {
       provenance: isCached ? 'cached' : 'live',
       cached: isCached,
       flag_bits: flagBits,
+      usingDefaultFlagBits: !hasHeaderFlagBits,
       catalog_sources: raw.catalog_sources ?? [],
       frames: decodedFrames,
       notes: raw.notes ?? [],
@@ -132,6 +134,7 @@ export async function fetchFrames(params: {
       provenance: 'error',
       cached: false,
       flag_bits: { ...DEFAULT_FLAG_BITS },
+      usingDefaultFlagBits: true,
       catalog_sources: [],
       frames: [],
       notes: [],

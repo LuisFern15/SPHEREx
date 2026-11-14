@@ -1,10 +1,10 @@
 import {
-  DEFAULT_FLAG_BITS,
   SPHEREX_BANDS,
   TARGET_PRESETS,
   mjdToJulianYear,
   propagatePosition,
 } from '../data/targets';
+import { DEFAULT_FLAG_BITS } from '../utils/flags';
 import {
   CatalogSource,
   DecodedSpherexFrame,
@@ -107,6 +107,28 @@ export function generateSimulatedCutouts(
   const matched = matchPresetNear(queryRa, queryDec);
   const epochMjds = [60780.2, 60962.4, 61144.6, 61326.8]; // ~6 month SPHEREx survey cycles (2025-2026)
 
+  // Mirror verified IRSA coverage: WISE 0855 has 0 frames in QR3 and 258 in DR1
+  if (matched?.id === 'wise0855' && collection === 'spherex_qr3') {
+    return {
+      query: {
+        ra: queryRa,
+        dec: queryDec,
+        size_arcsec: sizeArcsec,
+        collection,
+      },
+      pixel_scale_arcsec: PIXEL_SCALE_ARCSEC,
+      provenance: 'simulated',
+      cached: false,
+      flag_bits: { ...DEFAULT_FLAG_BITS },
+      usingDefaultFlagBits: false,
+      catalog_sources: [],
+      frames: [],
+      notes: [
+        'DEV SIMULATOR ACTIVE (sim=1): WISE 0855 has 0 exposures in spherex_qr3 (switch to spherex_dr1).',
+      ],
+    };
+  }
+
   const fieldStars = Array.from({ length: 7 }, (_, idx) => {
     const rng = mulberry32(Math.round(queryRa * 1000 + queryDec * 777 + idx * 97));
     const offsetX = (rng() - 0.5) * (width - 6);
@@ -124,10 +146,11 @@ export function generateSimulatedCutouts(
   });
 
   const frames: DecodedSpherexFrame[] = [];
-  const satBit = DEFAULT_FLAG_BITS.SATURATED;
+  const overflowBit = DEFAULT_FLAG_BITS.OVERFLOW;
+  const nonlinearBit = DEFAULT_FLAG_BITS.NONLINEAR;
   const persistBit = DEFAULT_FLAG_BITS.PERSIST;
   const sourceBit = DEFAULT_FLAG_BITS.SOURCE;
-  const disconBit = DEFAULT_FLAG_BITS.DISCON;
+  const transientBit = DEFAULT_FLAG_BITS.TRANSIENT;
 
   epochMjds.forEach((baseMjd, epIdx) => {
     // Include 3 exposures per band in epochs so intra-epoch co-add boosts faint SNR realistically
@@ -230,8 +253,8 @@ export function generateSimulatedCutouts(
             flagMask[ty * width + tx] |= 1 << sourceBit;
           }
           if (saturateCore) {
-            flagMask[ty * width + tx] |= 1 << satBit;
-            if (tx + 1 < width) flagMask[ty * width + (tx + 1)] |= 1 << satBit;
+            flagMask[ty * width + tx] |= (1 << overflowBit) | (1 << nonlinearBit);
+            if (tx + 1 < width) flagMask[ty * width + (tx + 1)] |= 1 << nonlinearBit;
           }
           if (addPersistence) {
             const pX = Math.max(0, Math.min(width - 1, tx - 3));
@@ -241,11 +264,11 @@ export function generateSimulatedCutouts(
           }
         }
 
-        // Occasional cosmic ray discontinuity pixel
+        // Occasional cosmic ray / charge spillover transient pixel
         if (sub === 1) {
           const crX = Math.floor(rng() * width);
           const crY = Math.floor(rng() * height);
-          flagMask[crY * width + crX] |= 1 << disconBit;
+          flagMask[crY * width + crX] |= 1 << transientBit;
           pixels[crY * width + crX] += 18;
         }
 
@@ -318,6 +341,7 @@ export function generateSimulatedCutouts(
     provenance: 'simulated',
     cached: false,
     flag_bits: { ...DEFAULT_FLAG_BITS },
+    usingDefaultFlagBits: false,
     catalog_sources: catalogSources,
     frames,
     notes: [

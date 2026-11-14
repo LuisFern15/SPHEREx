@@ -78,6 +78,14 @@ export interface TranslationStrings {
   saturationAlertLabel: string;
   persistenceAlertLabel: string;
   wiseInvisibleNote: string;
+  defaultFlagBitsWarning: string;
+  transientFlagHelp: string;
+  sourceFlagHelp: string;
+  predictedOutOfBoundsLabel: string;
+  emptyCollectionTitle: string;
+  emptyCollectionBody: string;
+  switchCollectionButton: string;
+  irsaCoverageLabel: string;
 }
 
 export const TRANSLATIONS: Record<Language, TranslationStrings> = {
@@ -162,6 +170,14 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     persistenceAlertLabel: 'Persistencia detectada',
     wiseInvisibleNote:
       'Nota: Si el objeto no destaca sobre el fondo (probable en exposiciones individuales de WISE 0855), activa "Épocas (suma por detector)" en Banda 5 o 6.',
+    defaultFlagBitsWarning: 'Bits de banderas por defecto, sin confirmar con la cabecera',
+    transientFlagHelp: 'TRANSIENT: rayo cósmico o derrame de carga de una estrella saturada.',
+    sourceFlagHelp: 'SOURCE: píxeles de fuentes catalogadas conocidas (no es un defecto del detector).',
+    predictedOutOfBoundsLabel: 'Posición predicha fuera del recorte',
+    emptyCollectionTitle: 'Sin imágenes en esta colección',
+    emptyCollectionBody: 'No hay exposiciones disponibles en la colección seleccionada para esta coordenada.',
+    switchCollectionButton: 'Cambiar a',
+    irsaCoverageLabel: 'Cobertura IRSA (DR1 / QR3)',
   },
   en: {
     brandTitle: 'SPHEREx Explorer',
@@ -244,5 +260,13 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     persistenceAlertLabel: 'Persistence flagged',
     wiseInvisibleNote:
       'Note: If the target does not stand out above background noise (expected in single WISE 0855 frames), enable "Epochs (detector co-add)" in Band 5 or 6.',
+    defaultFlagBitsWarning: 'Default flag bits, unconfirmed against FITS header',
+    transientFlagHelp: 'TRANSIENT: cosmic ray hit or charge spillover from a saturated star.',
+    sourceFlagHelp: 'SOURCE: pixels belonging to known cataloged sources (not a detector defect).',
+    predictedOutOfBoundsLabel: 'Predicted position outside cutout',
+    emptyCollectionTitle: 'No images in this collection',
+    emptyCollectionBody: 'No exposures are available in the selected collection for this sky position.',
+    switchCollectionButton: 'Switch to',
+    irsaCoverageLabel: 'IRSA coverage (DR1 / QR3)',
   },
 };

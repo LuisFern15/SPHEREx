@@ -187,3 +187,38 @@ export function skyToPixelLinear(
 
   return [dx + wcs.crpix[0] - 1, dy + wcs.crpix[1] - 1];
 }
+
+export interface PredictedPixelResolution {
+  px: [number, number] | null;
+  outOfBounds: boolean;
+}
+
+/**
+ * Resolves predicted_xy at the observation epoch of the individual frame (`frame.mjd`),
+ * NEVER today's date. Uses backend `predicted_xy` if present, otherwise propagates
+ * target coordinates to `mjdToJulianYear(frame.mjd)` and projects through frame WCS.
+ */
+export function resolvePredictedPixel(
+  frame: { mjd: number; shape: [number, number]; wcs: SpherexWcs; predicted_xy?: [number, number] } | null,
+  target: { ra: number; dec: number; epoch: number; pmra: number; pmdec: number } | null,
+  mjdToYearFn: (mjd: number) => number,
+  propagateFn: (
+    pos: { ra: number; dec: number; epoch: number; pmra: number; pmdec: number },
+    year: number
+  ) => { ra: number; dec: number }
+): PredictedPixelResolution {
+  if (!frame) return { px: null, outOfBounds: false };
+  const [imgH, imgW] = frame.shape;
+  let px: [number, number] | null = frame.predicted_xy ?? null;
+
+  if (!px && target) {
+    const frameYear = mjdToYearFn(frame.mjd);
+    const prop = propagateFn(target, frameYear);
+    px = skyToPixelLinear(prop.ra, prop.dec, frame.wcs);
+  }
+
+  if (!px) return { px: null, outOfBounds: false };
+  const outOfBounds = px[0] < 0 || px[0] >= imgW || px[1] < 0 || px[1] >= imgH;
+  return { px, outOfBounds };
+}
+

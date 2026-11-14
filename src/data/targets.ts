@@ -1,15 +1,8 @@
-import { BandContrast, FlagBitsMap, TargetPreset } from '../types/spherex';
+import { BandContrast, TargetPreset } from '../types/spherex';
 
 export const DEFAULT_TARGET_ID = 'barnard';
 
-export const DEFAULT_FLAG_BITS: FlagBitsMap = {
-  OVERFLOW: 0,
-  SATURATED: 2,
-  PERSIST: 5,
-  DISCON: 7,
-  NONFUNC: 10,
-  SOURCE: 21,
-};
+export const AVAILABLE_COLLECTIONS = ['spherex_qr3', 'spherex_dr1'] as const;
 
 export const SPHEREX_BANDS: Record<
   number,
@@ -34,7 +27,7 @@ export const DEFAULT_BAND_CONTRAST: Record<number, BandContrast> = {
 };
 
 /**
- * Mandatory Challenge 12 benchmark targets with reference astrometry (Gaia DR3 / SIMBAD).
+ * Mandatory Challenge 12 benchmark targets with reference astrometry.
  * Keep all astrometric constants centralized here for rapid auditing updates.
  */
 export const TARGET_PRESETS: TargetPreset[] = [
@@ -50,8 +43,9 @@ export const TARGET_PRESETS: TargetPreset[] = [
     pmdec: 10362.394,
     defaultBand: 0,
     defaultSize: 200,
-    collections: ['spherex_qr3'], // TODO: actualizar manualmente con colecciones IRSA disponibles
+    collections: ['spherex_qr3', 'spherex_dr1'],
     defaultCollection: 'spherex_qr3',
+    irsaCoverage: { dr1: 239, qr3: 119 },
     changeType: 'proper_motion',
     notesEs:
       'Se mueve ~10.4"/año (1.69 px/año) hacia el norte. Probable saturación del núcleo (J ≈ 5.2): activar capa de banderas para distinguir saturación y persistencia.',
@@ -62,68 +56,71 @@ export const TARGET_PRESETS: TargetPreset[] = [
     id: 'wise0855',
     nameEs: 'WISE 0855',
     nameEn: 'WISE 0855',
-    source: 'SIMBAD (Kirkpatrick 2021)',
-    ra: 133.81890825,
-    dec: -7.247048,
-    epoch: 2000.0,
+    source: 'Kirkpatrick et al. 2021 (arXiv:2011.11616), MJD 57633.39',
+    ra: 133.780984,
+    dec: -7.243932,
+    epoch: 2016.67,
     pmra: -8123.7,
     pmdec: 673.2,
     defaultBand: 6,
     defaultSize: 300,
-    collections: ['spherex_qr3'], // TODO: actualizar manualmente con colecciones IRSA disponibles
-    defaultCollection: 'spherex_qr3',
+    collections: ['spherex_dr1'],
+    defaultCollection: 'spherex_dr1',
+    irsaCoverage: { dr1: 258, qr3: 0 },
     changeType: 'proper_motion',
     referencePosition: {
       ra: 133.7951292,
       dec: -7.2451472,
       epoch: 2010.34,
-      labelEs: 'Ref. enunciado (~2010.34)',
-      labelEn: 'Prompt ref. (~2010.34)',
+      labelEs: 'Ref. enunciado (~2010, época inferida)',
+      labelEn: 'Prompt ref. (~2010, inferred epoch)',
     },
     notesEs:
-      'Enana marrón tipo Y, la más fría conocida. Se mueve ~8.15"/año (1.33 px/año) al oeste. Probablemente no se ve en una sola imagen de SPHEREx; solo, débil, en bandas 5 y 6 (usar suma por época). Sin entrada en Gaia. Coordenadas del enunciado (133.7951292, −7.2451472, época ~2010.34) mostradas solo como referencia sin centrar en ellas.',
+      'Enana marrón tipo Y sin entrada en Gaia. La predicción de su posición para 2026 tiene una incertidumbre de ±0.5″. Una publicación de 2026 (Rustamkulov et al., arXiv:2607.00543, pendiente de verificación por nuestro equipo) la reporta con SPHEREx siendo fiable únicamente por encima de 3.9 µm (bandas 5 y 6). Solo tiene datos en DR1 (258 exposiciones) y ninguno en QR3 (0). Coordenadas del enunciado (133.7951292, −7.2451472) mostradas solo como referencia (~2010, época inferida).',
     notesEn:
-      'Coldest known Y-type brown dwarf. Moves ~8.15"/yr (1.33 px/yr) westward. Likely undetected in single SPHEREx frames; faint only in Bands 5 & 6 (use epoch co-addition). No Gaia entry. Prompt coordinates (133.7951292, −7.2451472, epoch ~2010.34) are overlaid solely as an uncentered reference.',
+      'Y-type brown dwarf with no Gaia entry. Predicted 2026 position has ±0.5″ uncertainty. A 2026 paper (Rustamkulov et al., arXiv:2607.00543, pending verification by our team) reports SPHEREx detection as reliable only above 3.9 µm (Bands 5 and 6). Available only in DR1 (258 exposures) with 0 in QR3. Prompt coordinates (133.7951292, −7.2451472) shown solely as an uncentered reference (~2010, inferred epoch).',
   },
   {
     id: 'epsindib',
     nameEs: 'Epsilon Indi B',
     nameEn: 'Epsilon Indi B',
-    source: 'Gaia DR3',
-    ra: 331.07645,
-    dec: -56.79381,
+    source: 'Gaia DR3 6412596012146801152 (par Ba+Bb)',
+    ra: 331.0764526,
+    dec: -56.79381207,
     epoch: 2016.0,
-    pmra: 3981.98,
-    pmdec: -2466.83,
+    pmra: 3981.977,
+    pmdec: -2466.832,
     defaultBand: 0,
     defaultSize: 200,
-    collections: ['spherex_qr3'], // TODO: actualizar manualmente con colecciones IRSA disponibles
+    collections: ['spherex_qr3', 'spherex_dr1'],
     defaultCollection: 'spherex_qr3',
+    irsaCoverage: { dr1: 343, qr3: 120 },
     changeType: 'unresolved_pair',
     notesEs:
-      'Par de enanas marrones T1 + T6 separadas menos de 1.1": se ven como un único punto sin resolver a 6.15"/px. La estrella brillante ε Indi A está a 402", fuera de un campo de 300".',
+      'Par de enanas marrones T1 + T6 separadas menos de 1.1": se ven como un único punto sin resolver a 6.15"/px. La estrella brillante ε Indi A está a 402", fuera de un campo de 300". En QR3 solo existen datos en las bandas 2, 3, 5 y 6. En SIMBAD debe buscarse como "eps Ind B" con B mayúscula (ya que "eps Ind" devuelve la primaria A).',
     notesEn:
-      'T1 + T6 brown dwarf binary separated by < 1.1": appears as a single unresolved point source at 6.15"/px. Bright host ε Indi A lies 402" away, outside a 300" cutout.',
+      'T1 + T6 brown dwarf binary separated by < 1.1": appears as a single unresolved point source at 6.15"/px. Bright host ε Indi A lies 402" away, outside a 300" cutout. QR3 contains data only in Bands 2, 3, 5, and 6. Search SIMBAD as "eps Ind B" with uppercase B ("eps Ind" returns primary star A).',
   },
   {
     id: 'rwaur',
     nameEs: 'RW Aurigae',
     nameEn: 'RW Aurigae',
-    source: 'Gaia DR3 156430822114424576 (A)',
-    ra: 76.9560812,
-    dec: 30.40120459,
+    source: 'Punto medio de Gaia DR3 156430817820015232 y 156430822114424576',
+    ra: 76.95631275,
+    dec: 30.40126037,
     epoch: 2016.0,
-    pmra: 2.641,
-    pmdec: -27.398,
+    pmra: 3.77,
+    pmdec: -25.99,
     defaultBand: 0,
     defaultSize: 200,
-    collections: ['spherex_qr3'], // TODO: actualizar manualmente con colecciones IRSA disponibles
+    collections: ['spherex_qr3', 'spherex_dr1'],
     defaultCollection: 'spherex_qr3',
+    irsaCoverage: { dr1: 226, qr3: 110 },
     changeType: 'variability',
     notesEs:
-      'Estrella T Tauri binaria; A y B separadas 1.49" (0.24 px): una sola fuente en SPHEREx. Lo que cambia es el brillo (oscurecimientos irregulares). Cerca del plano galáctico (b ≈ −6°). Comparar solo cuadros con wave_um similar.',
+      'Se usa el punto medio de ambas fuentes Gaia DR3 porque SPHEREx no resuelve el par (0.24 px) y en SIMBAD/Gaia las etiquetas A y B están invertidas respecto a la literatura; aquí seguimos la convención de la literatura (A = noreste, con el jet y los eclipses). Un eclipse profundo de A comenzó en febrero de 2025 y no sabemos si continúa en 2026. Cerca del plano galáctico (b ≈ −6°). Comparar cuadros con wave_um similar.',
     notesEn:
-      'Binary T Tauri star; A & B separated by 1.49" (0.24 px), seen as one blended source. Exhibits irregular brightness dimmings near the galactic plane (b ≈ −6°). Compare frames at matching wave_um.',
+      'Centered on the Gaia DR3 midpoint because SPHEREx does not resolve the pair (0.24 px) and SIMBAD/Gaia invert the A/B labels relative to literature; here A = northeast (with jet and eclipses) per literature convention. A deep eclipse of A began in Feb 2025 and may still be ongoing in 2026. Near the galactic plane (b ≈ −6°). Compare frames at matching wave_um.',
   },
   {
     id: 'rdra',
@@ -137,13 +134,14 @@ export const TARGET_PRESETS: TargetPreset[] = [
     pmdec: 6.149,
     defaultBand: 0,
     defaultSize: 200,
-    collections: ['spherex_qr3'], // TODO: actualizar manualmente con colecciones IRSA disponibles
+    collections: ['spherex_qr3', 'spherex_dr1'],
     defaultCollection: 'spherex_qr3',
+    irsaCoverage: { dr1: 414, qr3: 126 },
     changeType: 'variability',
     notesEs:
-      'Variable Mira, período 246.12 días (AAVSO VSX). Cambia de brillo entre épocas. Muy brillante en el infrarrojo: saturará el detector, por lo que es clave inspeccionar banderas de saturación y persistencia.',
+      'Inmóvil a escala de píxel (0.0035 px/año). Su período es 246.12 días según AAVSO VSX y 245.6 días según GCVS, y sus fechas de máximo difieren unos 73 días sin comprobar con una curva de luz. El núcleo saturará en todas las bandas.',
     notesEn:
-      'Mira variable with 246.12-day period (AAVSO VSX). Exhibits strong IR brightness changes and detector saturation; inspect saturation and persistence flags carefully.',
+      'Stationary at pixel scale (0.0035 px/yr). Period is 246.12 days per AAVSO VSX and 245.6 days per GCVS, with predicted maxima differing by ~73 days (unverified against a light curve). Core will saturate across all bands.',
   },
 ];
 

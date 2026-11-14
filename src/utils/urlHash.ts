@@ -1,14 +1,44 @@
 import {
   DEFAULT_BAND_CONTRAST,
+  TARGET_PRESETS,
   dateToJulianYear,
   getDefaultTarget,
   propagatePosition,
 } from '../data/targets';
-import { UrlViewerState } from '../types/spherex';
+import { CollectionShortCode, UrlViewerState } from '../types/spherex';
 
 export function clampFieldSize(size: number): number {
   if (!Number.isFinite(size)) return 200;
   return Math.max(100, Math.min(300, Math.round(size)));
+}
+
+export function colToCollection(col: CollectionShortCode): string {
+  return col === 'dr1' ? 'spherex_dr1' : 'spherex_qr3';
+}
+
+export function collectionToCol(collection: string): CollectionShortCode {
+  return collection === 'spherex_dr1' || collection === 'dr1' ? 'dr1' : 'qr3';
+}
+
+function angularSepArcsec(ra1: number, dec1: number, ra2: number, dec2: number): number {
+  const cosDec = Math.cos(((dec1 + dec2) * 0.5 * Math.PI) / 180);
+  const dRa = (((ra1 - ra2 + 540) % 360) - 180) * cosDec;
+  const dDec = dec1 - dec2;
+  return Math.hypot(dRa, dDec) * 3600;
+}
+
+function inferDefaultColForCoords(ra: number, dec: number): CollectionShortCode {
+  const nowYear = dateToJulianYear(new Date());
+  for (const target of TARGET_PRESETS) {
+    const prop = propagatePosition(target, nowYear);
+    if (
+      angularSepArcsec(ra, dec, prop.ra, prop.dec) < 120 ||
+      angularSepArcsec(ra, dec, target.ra, target.dec) < 120
+    ) {
+      return collectionToCol(target.defaultCollection);
+    }
+  }
+  return collectionToCol(getDefaultTarget().defaultCollection);
 }
 
 export function getInitialUrlState(): UrlViewerState {
@@ -22,7 +52,7 @@ export function getInitialUrlState(): UrlViewerState {
     dec: Number(propagated.dec.toFixed(6)),
     size: defaultTarget.defaultSize,
     band: defaultBand,
-    collection: defaultTarget.defaultCollection,
+    col: collectionToCol(defaultTarget.defaultCollection),
     speed: 400,
     min: defaultContrast.min,
     max: defaultContrast.max,
@@ -44,16 +74,25 @@ export function getInitialUrlState(): UrlViewerState {
     return Number.isFinite(n) ? n : fallback;
   };
 
+  const ra = ((parseNum('ra', defaults.ra) % 360) + 360) % 360;
+  const dec = Math.max(-90, Math.min(90, parseNum('dec', defaults.dec)));
   const bandVal = Math.max(0, Math.min(6, Math.round(parseNum('band', defaults.band))));
   const bandContrast = DEFAULT_BAND_CONTRAST[bandVal] ?? defaultContrast;
-  const rawCollection = params.get('collection')?.trim();
+
+  const rawCol = (params.get('col') ?? params.get('collection'))?.trim().toLowerCase();
+  const col: CollectionShortCode =
+    rawCol === 'dr1' || rawCol === 'spherex_dr1'
+      ? 'dr1'
+      : rawCol === 'qr3' || rawCol === 'spherex_qr3'
+      ? 'qr3'
+      : inferDefaultColForCoords(ra, dec);
 
   return {
-    ra: ((parseNum('ra', defaults.ra) % 360) + 360) % 360,
-    dec: Math.max(-90, Math.min(90, parseNum('dec', defaults.dec))),
+    ra,
+    dec,
     size: clampFieldSize(parseNum('size', defaults.size)),
     band: bandVal,
-    collection: rawCollection && rawCollection.length > 0 ? rawCollection : defaults.collection,
+    col,
     speed: Math.max(100, Math.min(2000, Math.round(parseNum('speed', defaults.speed)))),
     min: parseNum('min', bandContrast.min),
     max: parseNum('max', bandContrast.max),
@@ -70,6 +109,7 @@ export function serializeUrlHash(state: UrlViewerState): string {
     `dec=${Number(state.dec.toFixed(6))}`,
     `size=${clampFieldSize(state.size)}`,
     `band=${state.band}`,
+    `col=${state.col}`,
     `speed=${state.speed}`,
     `min=${Number(state.min.toFixed(3))}`,
     `max=${Number(state.max.toFixed(3))}`,
@@ -77,9 +117,6 @@ export function serializeUrlHash(state: UrlViewerState): string {
     `flags=${state.flags}`,
     `cat=${state.cat}`,
   ];
-  if (state.collection && state.collection !== 'spherex_qr3') {
-    parts.push(`collection=${encodeURIComponent(state.collection)}`);
-  }
   if (state.sim === 1) {
     parts.push('sim=1');
   }

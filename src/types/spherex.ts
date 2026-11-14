@@ -66,6 +66,7 @@ export interface FramesQueryResult {
   provenance: ProvenanceState;
   cached: boolean;
   flag_bits: FlagBitsMap;
+  usingDefaultFlagBits: boolean;
   catalog_sources: CatalogSource[];
   frames: DecodedSpherexFrame[];
   notes: string[];
@@ -94,6 +95,7 @@ export interface TargetPreset {
   defaultSize: number;
   collections: string[]; // IRSA collections with data for this target
   defaultCollection: string; // default collection selected when choosing this target
+  irsaCoverage: { dr1: number; qr3: number };
   changeType: 'proper_motion' | 'variability' | 'unresolved_pair';
   referencePosition?: TargetReferencePosition;
   notesEs: string;
@@ -111,12 +113,14 @@ export interface EpochGroup {
   coaddsByBand: Record<number, DecodedSpherexFrame>;
 }
 
+export type CollectionShortCode = 'qr3' | 'dr1';
+
 export interface UrlViewerState {
   ra: number;
   dec: number;
   size: number;
   band: number;
-  collection: string;
+  col: CollectionShortCode;
   speed: number;
   min: number;
   max: number;

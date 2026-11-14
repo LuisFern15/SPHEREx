@@ -112,7 +112,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               value={collection}
               onChange={(e) => onChangeCollection(e.target.value)}
               aria-label={t.collectionLabel}
-              className="bg-[#07090E] border border-slate-700 focus:border-cyan-500 rounded px-2 py-1.5 text-xs font-mono text-slate-100 outline-none max-w-[150px]"
+              className="bg-[#07090E] border border-slate-700 focus:border-cyan-500 rounded px-2 py-1.5 text-xs font-mono text-slate-100 outline-none max-w-[175px]"
             >
               {availableCollections.map((col) => (
                 <option key={col} value={col}>
