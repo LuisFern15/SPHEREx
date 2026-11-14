@@ -50,6 +50,8 @@ export const TARGET_PRESETS: TargetPreset[] = [
     pmdec: 10362.394,
     defaultBand: 0,
     defaultSize: 200,
+    collections: ['spherex_qr3'], // TODO: actualizar manualmente con colecciones IRSA disponibles
+    defaultCollection: 'spherex_qr3',
     changeType: 'proper_motion',
     notesEs:
       'Se mueve ~10.4"/año (1.69 px/año) hacia el norte. Probable saturación del núcleo (J ≈ 5.2): activar capa de banderas para distinguir saturación y persistencia.',
@@ -68,6 +70,8 @@ export const TARGET_PRESETS: TargetPreset[] = [
     pmdec: 673.2,
     defaultBand: 6,
     defaultSize: 300,
+    collections: ['spherex_qr3'], // TODO: actualizar manualmente con colecciones IRSA disponibles
+    defaultCollection: 'spherex_qr3',
     changeType: 'proper_motion',
     referencePosition: {
       ra: 133.7951292,
@@ -93,6 +97,8 @@ export const TARGET_PRESETS: TargetPreset[] = [
     pmdec: -2466.83,
     defaultBand: 0,
     defaultSize: 200,
+    collections: ['spherex_qr3'], // TODO: actualizar manualmente con colecciones IRSA disponibles
+    defaultCollection: 'spherex_qr3',
     changeType: 'unresolved_pair',
     notesEs:
       'Par de enanas marrones T1 + T6 separadas menos de 1.1": se ven como un único punto sin resolver a 6.15"/px. La estrella brillante ε Indi A está a 402", fuera de un campo de 300".',
@@ -111,6 +117,8 @@ export const TARGET_PRESETS: TargetPreset[] = [
     pmdec: -27.398,
     defaultBand: 0,
     defaultSize: 200,
+    collections: ['spherex_qr3'], // TODO: actualizar manualmente con colecciones IRSA disponibles
+    defaultCollection: 'spherex_qr3',
     changeType: 'variability',
     notesEs:
       'Estrella T Tauri binaria; A y B separadas 1.49" (0.24 px): una sola fuente en SPHEREx. Lo que cambia es el brillo (oscurecimientos irregulares). Cerca del plano galáctico (b ≈ −6°). Comparar solo cuadros con wave_um similar.',
@@ -129,6 +137,8 @@ export const TARGET_PRESETS: TargetPreset[] = [
     pmdec: 6.149,
     defaultBand: 0,
     defaultSize: 200,
+    collections: ['spherex_qr3'], // TODO: actualizar manualmente con colecciones IRSA disponibles
+    defaultCollection: 'spherex_qr3',
     changeType: 'variability',
     notesEs:
       'Variable Mira, período 246.12 días (AAVSO VSX). Cambia de brillo entre épocas. Muy brillante en el infrarrojo: saturará el detector, por lo que es clave inspeccionar banderas de saturación y persistencia.',

@@ -22,6 +22,7 @@ export function getInitialUrlState(): UrlViewerState {
     dec: Number(propagated.dec.toFixed(6)),
     size: defaultTarget.defaultSize,
     band: defaultBand,
+    collection: defaultTarget.defaultCollection,
     speed: 400,
     min: defaultContrast.min,
     max: defaultContrast.max,
@@ -45,12 +46,14 @@ export function getInitialUrlState(): UrlViewerState {
 
   const bandVal = Math.max(0, Math.min(6, Math.round(parseNum('band', defaults.band))));
   const bandContrast = DEFAULT_BAND_CONTRAST[bandVal] ?? defaultContrast;
+  const rawCollection = params.get('collection')?.trim();
 
   return {
     ra: ((parseNum('ra', defaults.ra) % 360) + 360) % 360,
     dec: Math.max(-90, Math.min(90, parseNum('dec', defaults.dec))),
     size: clampFieldSize(parseNum('size', defaults.size)),
     band: bandVal,
+    collection: rawCollection && rawCollection.length > 0 ? rawCollection : defaults.collection,
     speed: Math.max(100, Math.min(2000, Math.round(parseNum('speed', defaults.speed)))),
     min: parseNum('min', bandContrast.min),
     max: parseNum('max', bandContrast.max),
@@ -74,6 +77,9 @@ export function serializeUrlHash(state: UrlViewerState): string {
     `flags=${state.flags}`,
     `cat=${state.cat}`,
   ];
+  if (state.collection && state.collection !== 'spherex_qr3') {
+    parts.push(`collection=${encodeURIComponent(state.collection)}`);
+  }
   if (state.sim === 1) {
     parts.push('sim=1');
   }

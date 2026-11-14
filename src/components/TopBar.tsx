@@ -12,12 +12,15 @@ interface TopBarProps {
   ra: number;
   dec: number;
   size: number;
+  collection: string;
+  availableCollections: string[];
   activeTargetId: string | null;
   simMode: boolean;
   onToggleSimMode: () => void;
   onSelectTarget: (target: TargetPreset) => void;
   onSearchCoords: (ra: number, dec: number, size: number) => void;
   onChangeSize: (size: number) => void;
+  onChangeCollection: (collection: string) => void;
 }
 
 const SIZE_OPTIONS = [100, 150, 200, 250, 300];
@@ -29,12 +32,15 @@ export const TopBar: React.FC<TopBarProps> = ({
   ra,
   dec,
   size,
+  collection,
+  availableCollections,
   activeTargetId,
   simMode,
   onToggleSimMode,
   onSelectTarget,
   onSearchCoords,
   onChangeSize,
+  onChangeCollection,
 }) => {
   const [coordInput, setCoordInput] = useState(`${ra.toFixed(5)}, ${dec.toFixed(5)}`);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -95,6 +101,22 @@ export const TopBar: React.FC<TopBarProps> = ({
               {SIZE_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
                   {opt}&Prime;
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex items-center gap-1.5 text-xs text-slate-400 shrink-0">
+            <span className="hidden xl:inline">{t.collectionLabel}</span>
+            <select
+              value={collection}
+              onChange={(e) => onChangeCollection(e.target.value)}
+              aria-label={t.collectionLabel}
+              className="bg-[#07090E] border border-slate-700 focus:border-cyan-500 rounded px-2 py-1.5 text-xs font-mono text-slate-100 outline-none max-w-[150px]"
+            >
+              {availableCollections.map((col) => (
+                <option key={col} value={col}>
+                  {col}
                 </option>
               ))}
             </select>

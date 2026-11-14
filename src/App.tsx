@@ -98,7 +98,7 @@ export default function App() {
       ra: urlState.ra,
       dec: urlState.dec,
       size_arcsec: urlState.size,
-      collection: 'spherex_qr3',
+      collection: urlState.collection,
     },
     pixel_scale_arcsec: 6.15,
     provenance: urlState.sim === 1 ? 'simulated' : 'live',
@@ -150,6 +150,7 @@ export default function App() {
       ra: urlState.ra,
       dec: urlState.dec,
       size: urlState.size,
+      collection: urlState.collection,
       simMode: urlState.sim === 1,
       signal: controller.signal,
     }).then((result) => {
@@ -159,12 +160,17 @@ export default function App() {
     });
 
     return () => controller.abort();
-  }, [urlState.ra, urlState.dec, urlState.size, urlState.sim, retryNonce]);
+  }, [urlState.ra, urlState.dec, urlState.size, urlState.collection, urlState.sim, retryNonce]);
 
   const activeTarget = useMemo(
     () => findMatchingTarget(urlState.ra, urlState.dec),
     [urlState.ra, urlState.dec]
   );
+
+  const availableCollections = useMemo(() => {
+    const base = activeTarget?.collections ?? ['spherex_qr3'];
+    return base.includes(urlState.collection) ? base : [urlState.collection, ...base];
+  }, [activeTarget, urlState.collection]);
 
   const epochs = useMemo(
     () => groupFramesIntoEpochs(queryResult.frames, queryResult.flag_bits),
@@ -248,6 +254,7 @@ export default function App() {
       dec: Number(propagated.dec.toFixed(6)),
       size: clampFieldSize(target.defaultSize),
       band: targetBand,
+      collection: target.defaultCollection,
       min: targetContrast.min,
       max: targetContrast.max,
       i: 0,
@@ -352,6 +359,8 @@ export default function App() {
         ra={urlState.ra}
         dec={urlState.dec}
         size={urlState.size}
+        collection={urlState.collection}
+        availableCollections={availableCollections}
         activeTargetId={activeTarget?.id ?? null}
         simMode={urlState.sim === 1}
         onToggleSimMode={() =>
@@ -361,6 +370,9 @@ export default function App() {
         onSearchCoords={handleSearchCoords}
         onChangeSize={(nextSize) =>
           setUrlState((prev) => ({ ...prev, size: clampFieldSize(nextSize), i: 0 }))
+        }
+        onChangeCollection={(nextCol) =>
+          setUrlState((prev) => ({ ...prev, collection: nextCol, i: 0 }))
         }
       />
 

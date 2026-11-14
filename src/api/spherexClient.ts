@@ -54,7 +54,7 @@ export async function fetchFrames(params: {
   const { ra, dec, size, simMode, collection = 'spherex_qr3', signal } = params;
 
   if (simMode) {
-    return generateSimulatedCutouts(ra, dec, size);
+    return generateSimulatedCutouts(ra, dec, size, collection);
   }
 
   const url = `${API_BASE}/api/frames?ra=${encodeURIComponent(ra.toFixed(6))}&dec=${encodeURIComponent(

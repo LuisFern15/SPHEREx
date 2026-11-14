@@ -92,6 +92,8 @@ export interface TargetPreset {
   pmdec: number; // mas/yr
   defaultBand: number;
   defaultSize: number;
+  collections: string[]; // IRSA collections with data for this target
+  defaultCollection: string; // default collection selected when choosing this target
   changeType: 'proper_motion' | 'variability' | 'unresolved_pair';
   referencePosition?: TargetReferencePosition;
   notesEs: string;
@@ -114,6 +116,7 @@ export interface UrlViewerState {
   dec: number;
   size: number;
   band: number;
+  collection: string;
   speed: number;
   min: number;
   max: number;

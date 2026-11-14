@@ -6,6 +6,7 @@ export interface TranslationStrings {
   searchButton: string;
   invalidCoords: string;
   fieldSizeLabel: string;
+  collectionLabel: string;
   targetsLabel: string;
   propagatedLabel: string;
   provenanceLive: string;
@@ -86,6 +87,7 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     searchButton: 'Buscar',
     invalidCoords: 'Formato inválido. Usa grados decimales o sexagesimal (h/d, espacios o :).',
     fieldSizeLabel: 'Campo',
+    collectionLabel: 'Colección',
     targetsLabel: 'Objetivos',
     propagatedLabel: 'Propagado a fecha actual',
     provenanceLive: 'En vivo',
@@ -167,6 +169,7 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     searchButton: 'Search',
     invalidCoords: 'Invalid coordinate format. Use decimal degrees or sexagesimal (h/d, spaces, or :).',
     fieldSizeLabel: 'FOV',
+    collectionLabel: 'Collection',
     targetsLabel: 'Targets',
     propagatedLabel: 'Propagated to current date',
     provenanceLive: 'Live',

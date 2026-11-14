@@ -94,7 +94,8 @@ function mjdToIsoUtc(mjd: number): string {
 export function generateSimulatedCutouts(
   queryRa: number,
   queryDec: number,
-  sizeArcsec: number
+  sizeArcsec: number,
+  collection = 'spherex_qr3'
 ): FramesQueryResult {
   const oddDim = Math.max(17, Math.min(51, Math.round(sizeArcsec / PIXEL_SCALE_ARCSEC) | 1));
   const width = oddDim;
@@ -311,7 +312,7 @@ export function generateSimulatedCutouts(
       ra: queryRa,
       dec: queryDec,
       size_arcsec: sizeArcsec,
-      collection: 'spherex_qr3_dev_sim',
+      collection,
     },
     pixel_scale_arcsec: PIXEL_SCALE_ARCSEC,
     provenance: 'simulated',
