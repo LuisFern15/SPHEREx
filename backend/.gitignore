@@ -6,3 +6,5 @@ __pycache__/
 # Regla del repositorio: nunca subir FITS completos de ~70 MB
 data/*.fits
 data/*.fits.gz
+# Caché de recortes bajados de IRSA por generar_snapshots.py
+cache/

@@ -6,9 +6,9 @@ import { ProvenanceBanner } from './components/ProvenanceBanner';
 import { RightPanel } from './components/RightPanel';
 import { TopBar } from './components/TopBar';
 import {
-  AVAILABLE_COLLECTIONS,
   DEFAULT_BAND_CONTRAST,
   TARGET_PRESETS,
+  collectionsForTarget,
   dateToJulianYear,
   mjdToJulianYear,
   propagatePosition,
@@ -103,6 +103,7 @@ export default function App() {
 
   // API / Query result state
   const [loading, setLoading] = useState(true);
+  const [hasResponse, setHasResponse] = useState(false);
   const [retryNonce, setRetryNonce] = useState(0);
   const [queryResult, setQueryResult] = useState<FramesQueryResult>({
     query: {
@@ -168,6 +169,7 @@ export default function App() {
     }).then((result) => {
       if (controller.signal.aborted) return;
       setQueryResult(result);
+      setHasResponse(true);
       setLoading(false);
     });
 
@@ -179,10 +181,10 @@ export default function App() {
     [urlState.ra, urlState.dec]
   );
 
-  const availableCollections = useMemo(() => {
-    const base: string[] = [...AVAILABLE_COLLECTIONS];
-    return base.includes(activeCollection) ? base : [activeCollection, ...base];
-  }, [activeCollection]);
+  const availableCollections = useMemo(
+    () => collectionsForTarget(activeTarget, activeCollection),
+    [activeTarget, activeCollection]
+  );
 
   const epochs = useMemo(
     () => groupFramesIntoEpochs(queryResult.frames, queryResult.flag_bits),
@@ -210,21 +212,19 @@ export default function App() {
   // Playback timer
   useEffect(() => {
     if (!playing || timelineFrames.length <= 1) return;
-    const id = window.setInterval(() => {
-      setUrlState((prev) => {
-        const nextIdx = prev.i + 1;
-        if (nextIdx >= timelineFrames.length) {
-          if (!loop) {
-            setPlaying(false);
-            return prev;
-          }
-          return { ...prev, i: 0 };
+    const id = window.setTimeout(() => {
+      if (safeIndex + 1 >= timelineFrames.length) {
+        if (!loop) {
+          setPlaying(false);
+          return;
         }
-        return { ...prev, i: nextIdx };
-      });
+        setUrlState((prev) => ({ ...prev, i: 0 }));
+      } else {
+        setUrlState((prev) => ({ ...prev, i: safeIndex + 1 }));
+      }
     }, urlState.speed);
-    return () => window.clearInterval(id);
-  }, [playing, timelineFrames.length, loop, urlState.speed]);
+    return () => window.clearTimeout(id);
+  }, [playing, timelineFrames.length, loop, urlState.speed, safeIndex]);
 
   // Blink A/B timer
   useEffect(() => {
@@ -378,8 +378,18 @@ export default function App() {
     setUrlState((prev) => ({ ...prev, col: collectionToCol(nextColName), i: 0 }));
   }, []);
 
+  const handleToggleSimMode = useCallback(() => {
+    setPlaying(false);
+    setUrlState((prev) => ({ ...prev, sim: prev.sim === 1 ? 0 : 1, i: 0 }));
+  }, []);
+
+  const handleChangeSize = useCallback((nextSize: number) => {
+    setPlaying(false);
+    setUrlState((prev) => ({ ...prev, size: clampFieldSize(nextSize), i: 0 }));
+  }, []);
+
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#07090E] text-slate-100">
+    <div className="min-h-screen w-full lg:h-screen lg:overflow-hidden flex flex-col bg-transparent text-ink p-1.5 sm:p-2 gap-1.5 sm:gap-2">
       <TopBar
         t={t}
         lang={lang}
@@ -391,27 +401,28 @@ export default function App() {
         availableCollections={availableCollections}
         activeTargetId={activeTarget?.id ?? null}
         simMode={urlState.sim === 1}
-        onToggleSimMode={() =>
-          setUrlState((prev) => ({ ...prev, sim: prev.sim === 1 ? 0 : 1, i: 0 }))
-        }
+        onToggleSimMode={handleToggleSimMode}
         onSelectTarget={handleSelectTarget}
         onSearchCoords={handleSearchCoords}
-        onChangeSize={(nextSize) =>
-          setUrlState((prev) => ({ ...prev, size: clampFieldSize(nextSize), i: 0 }))
-        }
+        onChangeSize={handleChangeSize}
         onChangeCollection={handleChangeCollection}
       />
 
-      <ProvenanceBanner
-        t={t}
-        provenance={queryResult.provenance}
-        loading={loading}
-        errorMessage={queryResult.errorMessage}
-        notes={queryResult.notes}
-        onRetry={() => setRetryNonce((n) => n + 1)}
-      />
+      {hasResponse && (
+        <ProvenanceBanner
+          t={t}
+          provenance={queryResult.provenance}
+          loading={loading}
+          errorMessage={queryResult.errorMessage}
+          emptyMessage={queryResult.emptyMessage}
+          requestedSize={urlState.size}
+          actualSize={queryResult.query.size_arcsec}
+          notes={queryResult.notes}
+          onRetry={() => setRetryNonce((n) => n + 1)}
+        />
+      )}
 
-      <main className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+      <main className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden gap-1.5 sm:gap-2">
         <CutoutViewport
           t={t}
           lang={lang}
@@ -420,6 +431,7 @@ export default function App() {
           provenance={queryResult.provenance}
           loading={loading}
           errorMessage={queryResult.errorMessage}
+          emptyMessage={queryResult.emptyMessage}
           onRetry={() => setRetryNonce((n) => n + 1)}
           min={activeContrast.min}
           max={activeContrast.max}
@@ -442,7 +454,7 @@ export default function App() {
           catalogSources={queryResult.catalog_sources}
           activeTarget={activeTarget}
           pixelScaleArcsec={queryResult.pixel_scale_arcsec}
-          sizeArcsec={urlState.size}
+          sizeArcsec={queryResult.query.size_arcsec}
           activeCollection={activeCollection}
           totalFramesCount={queryResult.frames.length}
           onSwitchCollection={handleChangeCollection}
@@ -455,6 +467,7 @@ export default function App() {
           collection={activeCollection}
           onChangeCollection={handleChangeCollection}
           activeTarget={activeTarget}
+          frames={queryResult.frames}
           band={urlState.band}
           min={activeContrast.min}
           max={activeContrast.max}

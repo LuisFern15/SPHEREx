@@ -18,7 +18,16 @@ export const DEFAULT_FLAG_BITS: FlagBitsMap = {
   NONLINEAR: 15,
   PERSIST: 17,
   OUTLIER: 19,
+  CROSSTALK: 20,
   SOURCE: 21,
+  GHOST: 22,
+  GHOST_FPA: 23,
+  GHOST_EXT: 24,
+  STREAK: 25,
+  BLOOM: 26,
+  SNOWBALL: 27,
+  HALO: 28,
+  SATELLITE_HALO: 29,
 };
 
 export type FlagCategory = 'saturation' | 'persistence' | 'bad' | 'source' | 'other';
@@ -61,7 +70,16 @@ export function classifyFlagName(name: string): FlagCategory {
     upper === 'TRANSIENT' ||
     upper === 'SUR_ERROR' ||
     upper === 'FULLSAMPLE' ||
-    upper === 'OUTLIER'
+    upper === 'OUTLIER' ||
+    upper === 'CROSSTALK' ||
+    upper === 'GHOST' ||
+    upper === 'GHOST_FPA' ||
+    upper === 'GHOST_EXT' ||
+    upper === 'STREAK' ||
+    upper === 'BLOOM' ||
+    upper === 'SNOWBALL' ||
+    upper === 'HALO' ||
+    upper === 'SATELLITE_HALO'
   ) {
     return 'other';
   }

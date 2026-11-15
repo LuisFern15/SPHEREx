@@ -18,10 +18,15 @@ export function bytesToBase64(bytes: Uint8Array): string {
 
 export function decodeBase64Float32LE(b64: string, expectedLength: number): Float32Array {
   const bytes = base64ToBytes(b64);
+  const expectedBytes = expectedLength * 4;
+  if (bytes.byteLength < expectedBytes) {
+    throw new Error(
+      `Datos binarios truncados (esperados ${expectedBytes} bytes, recibidos ${bytes.byteLength}). / Truncated binary payload (expected ${expectedBytes} bytes, got ${bytes.byteLength}).`
+    );
+  }
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  const count = Math.min(expectedLength, Math.floor(bytes.byteLength / 4));
   const out = new Float32Array(expectedLength);
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < expectedLength; i++) {
     out[i] = view.getFloat32(i * 4, true);
   }
   return out;
@@ -29,10 +34,15 @@ export function decodeBase64Float32LE(b64: string, expectedLength: number): Floa
 
 export function decodeBase64Uint32LE(b64: string, expectedLength: number): Uint32Array {
   const bytes = base64ToBytes(b64);
+  const expectedBytes = expectedLength * 4;
+  if (bytes.byteLength < expectedBytes) {
+    throw new Error(
+      `Máscara de banderas truncada (esperados ${expectedBytes} bytes, recibidos ${bytes.byteLength}). / Truncated flag mask payload (expected ${expectedBytes} bytes, got ${bytes.byteLength}).`
+    );
+  }
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  const count = Math.min(expectedLength, Math.floor(bytes.byteLength / 4));
   const out = new Uint32Array(expectedLength);
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < expectedLength; i++) {
     out[i] = view.getUint32(i * 4, true);
   }
   return out;

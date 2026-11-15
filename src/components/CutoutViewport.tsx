@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
-import { mjdToJulianYear, propagatePosition } from '../data/targets';
+import {
+  collectionsForTarget,
+  formatIrsaCoverage,
+  mjdToJulianYear,
+  propagatePosition,
+} from '../data/targets';
 import { TranslationStrings } from '../i18n/translations';
 import { Canvas2DRenderer } from '../rendering/canvas2dRenderer';
 import { CutoutRenderer, ViewportTransform } from '../rendering/cutoutRenderer';
@@ -16,6 +20,20 @@ import {
 } from '../types/spherex';
 import { pixelToSkyLinear, resolvePredictedPixel, skyToPixelLinear } from '../utils/coordinates';
 import { DecodedFlagEntry, decodePixelFlags } from '../utils/flags';
+import { PixelRefreshIcon } from './PixelIcons';
+
+const PALETTE = {
+  void: '#0a0814',
+  ink: '#e8e6ff',
+  ink60: 'rgba(232, 230, 255, 0.6)',
+  amber: '#ffb000',
+  dim: '#9a95d0',
+  b1: '#7aa2ff',
+  bad: '#ff4d6d',
+  badFill: 'rgba(255, 77, 109, 0.22)',
+  warn: '#ffd23f',
+  warnFill: 'rgba(255, 210, 63, 0.18)',
+} as const;
 
 export interface HoveredPixelInfo {
   x: number;
@@ -34,6 +52,7 @@ interface CutoutViewportProps {
   provenance: ProvenanceState;
   loading: boolean;
   errorMessage?: string;
+  emptyMessage?: string;
   onRetry: () => void;
   min: number;
   max: number;
@@ -71,6 +90,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
   provenance,
   loading,
   errorMessage,
+  emptyMessage,
   onRetry,
   min,
   max,
@@ -107,6 +127,16 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
   const [transform, setTransform] = useState<ViewportTransform | null>(null);
   const [dragging, setDragging] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
+  const zoomRef = useRef(zoom);
+  const onZoomChangeRef = useRef(onZoomChange);
+
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+
+  useEffect(() => {
+    onZoomChangeRef.current = onZoomChange;
+  }, [onZoomChange]);
 
   useEffect(() => {
     const renderer = new Canvas2DRenderer();
@@ -131,6 +161,22 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     return () => ro.disconnect();
   }, []);
 
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+      const next = Math.max(0.5, Math.min(8, Number((zoomRef.current * factor).toFixed(2))));
+      zoomRef.current = next;
+      onZoomChangeRef.current(next);
+    };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
   const displayedFrame =
     compareMode === 'blink' && blinkShowRef && refFrame ? refFrame : frame;
   const isDifference =
@@ -147,7 +193,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     if (!displayedFrame) {
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.fillStyle = '#07090E';
+        ctx.fillStyle = PALETTE.void;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
       setTransform(null);
@@ -250,7 +296,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     };
   }, [displayedFrame, transform, activeTarget]);
 
-  // Flagged pixel overlay elements
+  // Flagged pixel overlay elements (only saturation, persistence, and bad; omit source/other)
   const flagOverlayCells = useMemo(() => {
     if (!showFlags || !displayedFrame || !transform) return [];
     const [imgH, imgW] = displayedFrame.shape;
@@ -259,7 +305,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       sx: number;
       sy: number;
       size: number;
-      kind: 'saturation' | 'persistence' | 'bad' | 'source' | 'other';
+      kind: 'saturation' | 'persistence' | 'bad';
     }[] = [];
 
     for (let y = 0; y < imgH; y++) {
@@ -269,11 +315,12 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
         const active = decodePixelFlags(mask, flagBits);
         if (active.length === 0) continue;
 
-        let chosenKind: 'saturation' | 'persistence' | 'bad' | 'source' | 'other' = 'other';
+        let chosenKind: 'saturation' | 'persistence' | 'bad' | null = null;
         if (active.some((f) => f.category === 'saturation')) chosenKind = 'saturation';
         else if (active.some((f) => f.category === 'persistence')) chosenKind = 'persistence';
         else if (active.some((f) => f.category === 'bad')) chosenKind = 'bad';
-        else if (active.some((f) => f.category === 'source')) chosenKind = 'source';
+
+        if (!chosenKind) continue;
 
         const sx = transform.drawX + x * transform.pixelSize;
         const sy = transform.drawY + (imgH - 1 - y) * transform.pixelSize;
@@ -306,6 +353,19 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     }
     return pts;
   }, [showCatalog, displayedFrame, transform, catalogSources]);
+
+  const fallbackCollection = useMemo(() => {
+    if (activeTarget) {
+      if (
+        activeCollection !== 'spherex_both' &&
+        activeTarget.collections.includes('spherex_both')
+      ) {
+        return 'spherex_both';
+      }
+      return activeTarget.collections.find((c) => c !== activeCollection) ?? null;
+    }
+    return activeCollection === 'spherex_both' ? 'spherex_dr1' : 'spherex_both';
+  }, [activeTarget, activeCollection]);
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (dragging && dragStartRef.current) {
@@ -346,11 +406,21 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     onHoverPixel({ x: px, y: py, flux, ra: sky.ra, dec: sky.dec, flags });
   };
 
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-    const next = Math.max(0.5, Math.min(8, Number((zoom * factor).toFixed(2))));
-    onZoomChange(next);
+  const releasePointerDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (dragStartRef.current) {
+      try {
+        if (
+          typeof e.currentTarget.hasPointerCapture !== 'function' ||
+          e.currentTarget.hasPointerCapture(e.pointerId)
+        ) {
+          e.currentTarget.releasePointerCapture?.(e.pointerId);
+        }
+      } catch {
+        // ignore if pointer capture was already released
+      }
+    }
+    setDragging(false);
+    dragStartRef.current = null;
   };
 
   return (
@@ -358,25 +428,49 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       ref={containerRef}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
+        // Con la captura del puntero el "click" se reencamina al contenedor: los botones de las capas
+        // (p. ej. "Probar otra colección") dejarían de funcionar. No se arrastra desde controles.
+        if ((e.target as HTMLElement).closest('button, a, input, select, textarea')) return;
+        try {
+          e.currentTarget.setPointerCapture?.(e.pointerId);
+        } catch {
+          // ignore if pointer capture is unavailable
+        }
         setDragging(true);
         dragStartRef.current = { x: e.clientX, y: e.clientY, panX, panY };
       }}
-      onPointerUp={() => {
+      onPointerUp={releasePointerDrag}
+      onPointerCancel={releasePointerDrag}
+      onLostPointerCapture={() => {
         setDragging(false);
         dragStartRef.current = null;
       }}
       onPointerLeave={() => {
-        setDragging(false);
-        dragStartRef.current = null;
-        onHoverPixel(null);
+        if (!dragStartRef.current) {
+          onHoverPixel(null);
+        }
       }}
       onPointerMove={handlePointerMove}
-      onWheel={handleWheel}
-      className={`relative flex-1 bg-[#07090E] overflow-hidden select-none ${
+      className={`relative flex-1 min-h-[340px] lg:min-h-0 bg-void border-4 border-line shadow-[4px_4px_0_#000000] overflow-hidden select-none ${
         dragging ? 'cursor-grabbing' : 'cursor-crosshair'
       }`}
     >
-      <canvas ref={canvasRef} className="block w-full h-full" />
+      {/* Esquinas decorativas atornilladas y retícula de tramado en el marco */}
+      <span className="pointer-events-none absolute top-1 left-1 w-[6px] h-[6px] bg-amber-lo z-20" aria-hidden="true" />
+      <span className="pointer-events-none absolute top-1 right-1 w-[6px] h-[6px] bg-amber-lo z-20" aria-hidden="true" />
+      <span className="pointer-events-none absolute bottom-1 left-1 w-[6px] h-[6px] bg-amber-lo z-20" aria-hidden="true" />
+      <span className="pointer-events-none absolute bottom-1 right-1 w-[6px] h-[6px] bg-amber-lo z-20" aria-hidden="true" />
+
+      <span className="pointer-events-none absolute top-0 left-0 w-5 h-5 px-dither opacity-35 z-10" aria-hidden="true" />
+      <span className="pointer-events-none absolute top-0 right-0 w-5 h-5 px-dither opacity-35 z-10" aria-hidden="true" />
+      <span className="pointer-events-none absolute bottom-0 left-0 w-5 h-5 px-dither opacity-35 z-10" aria-hidden="true" />
+      <span className="pointer-events-none absolute bottom-0 right-0 w-5 h-5 px-dither opacity-35 z-10" aria-hidden="true" />
+
+      <canvas
+        ref={canvasRef}
+        className="block w-full h-full"
+        style={{ imageRendering: 'pixelated' }}
+      />
 
       {/* Synchronized SVG Overlay */}
       {displayedFrame && transform && (
@@ -384,20 +478,24 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
           className="absolute inset-0 w-full h-full pointer-events-none"
           width={canvasDims.width}
           height={canvasDims.height}
+          shapeRendering="crispEdges"
         >
           {/* Quality Flags Layer */}
           {flagOverlayCells.map((cell) => {
+            const x = Math.round(cell.sx);
+            const y = Math.round(cell.sy);
+            const sizePx = Math.max(2, Math.round(cell.size));
             if (cell.kind === 'saturation') {
               return (
                 <g key={cell.key}>
                   <rect
-                    x={cell.sx + 0.5}
-                    y={cell.sy + 0.5}
-                    width={Math.max(2, cell.size - 1)}
-                    height={Math.max(2, cell.size - 1)}
-                    fill="rgba(244, 63, 94, 0.22)"
-                    stroke="#F43F5E"
-                    strokeWidth={1.5}
+                    x={x}
+                    y={y}
+                    width={sizePx}
+                    height={sizePx}
+                    fill={PALETTE.badFill}
+                    stroke={PALETTE.bad}
+                    strokeWidth={2}
                   />
                 </g>
               );
@@ -406,91 +504,85 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
               return (
                 <rect
                   key={cell.key}
-                  x={cell.sx + 0.5}
-                  y={cell.sy + 0.5}
-                  width={Math.max(2, cell.size - 1)}
-                  height={Math.max(2, cell.size - 1)}
-                  fill="rgba(245, 158, 11, 0.18)"
-                  stroke="#F59E0B"
-                  strokeWidth={1.3}
-                  strokeDasharray="2 1.5"
+                  x={x}
+                  y={y}
+                  width={sizePx}
+                  height={sizePx}
+                  fill={PALETTE.warnFill}
+                  stroke={PALETTE.warn}
+                  strokeWidth={2}
+                  strokeDasharray="4 2"
                 />
               );
             }
-            if (cell.kind === 'bad') {
-              return (
-                <g key={cell.key} stroke="#E879F9" strokeWidth={1.2}>
-                  <line x1={cell.sx + 2} y1={cell.sy + 2} x2={cell.sx + cell.size - 2} y2={cell.sy + cell.size - 2} />
-                  <line x1={cell.sx + cell.size - 2} y1={cell.sy + 2} x2={cell.sx + 2} y2={cell.sy + cell.size - 2} />
-                </g>
-              );
-            }
             return (
-              <rect
-                key={cell.key}
-                x={cell.sx + 1}
-                y={cell.sy + 1}
-                width={Math.max(2, cell.size - 2)}
-                height={Math.max(2, cell.size - 2)}
-                fill="none"
-                stroke="rgba(34, 211, 238, 0.55)"
-                strokeWidth={1}
-              />
+              <g key={cell.key} stroke={PALETTE.ink60} strokeWidth={2}>
+                <line x1={x + 2} y1={y + 2} x2={x + sizePx - 2} y2={y + sizePx - 2} />
+                <line x1={x + sizePx - 2} y1={y + 2} x2={x + 2} y2={y + sizePx - 2} />
+              </g>
             );
           })}
 
           {/* Reference Catalog Layer (cat=1) */}
-          {catalogPoints.map((pt) => (
-            <g key={pt.id}>
-              <circle
-                cx={pt.sx}
-                cy={pt.sy}
-                r={Math.max(5, transform.pixelSize * 0.7)}
-                fill="none"
-                stroke={pt.kind === 'reference' ? '#A78BFA' : '#38BDF8'}
-                strokeWidth={1.2}
-                strokeDasharray={pt.kind === 'reference' ? '3 2' : undefined}
-              />
-              <text
-                x={pt.sx + Math.max(7, transform.pixelSize * 0.85)}
-                y={pt.sy - 4}
-                fill={pt.kind === 'reference' ? '#C4B5FD' : '#7DD3FC'}
-                fontSize={10}
-                fontFamily="JetBrains Mono, monospace"
-              >
-                {pt.label}
-              </text>
-            </g>
-          ))}
+          {catalogPoints.map((pt) => {
+            const sx = Math.round(pt.sx);
+            const sy = Math.round(pt.sy);
+            const r = Math.max(5, Math.round(transform.pixelSize * 0.65));
+            const color = pt.kind === 'reference' ? PALETTE.dim : PALETTE.b1;
+            return (
+              <g key={pt.id}>
+                {/* Círculo como antes: un aspa se confundiría con la marca de píxel defectuoso. */}
+                <circle
+                  cx={sx}
+                  cy={sy}
+                  r={r}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={2}
+                  strokeDasharray={pt.kind === 'reference' ? '4 2' : undefined}
+                />
+
+                <text
+                  x={sx + r + 4}
+                  y={sy - 4}
+                  fill={color}
+                  fontSize={14}
+                  fontFamily="VT323, ui-monospace, monospace"
+                >
+                  {pt.label}
+                </text>
+              </g>
+            );
+          })}
 
           {/* Fixed Query Reticle (query_xy) + Predicted Epoch Position (predicted_xy) */}
           {showReticles && reticles && (
             <>
               {reticles.queryScreen && (
-                <g stroke="#06B6D4" strokeWidth={1.5}>
+                <g stroke={PALETTE.ink} strokeWidth={2}>
                   <line
-                    x1={reticles.queryScreen.x - 16}
-                    y1={reticles.queryScreen.y}
-                    x2={reticles.queryScreen.x - 6}
-                    y2={reticles.queryScreen.y}
+                    x1={Math.round(reticles.queryScreen.x) - 16}
+                    y1={Math.round(reticles.queryScreen.y)}
+                    x2={Math.round(reticles.queryScreen.x) - 6}
+                    y2={Math.round(reticles.queryScreen.y)}
                   />
                   <line
-                    x1={reticles.queryScreen.x + 6}
-                    y1={reticles.queryScreen.y}
-                    x2={reticles.queryScreen.x + 16}
-                    y2={reticles.queryScreen.y}
+                    x1={Math.round(reticles.queryScreen.x) + 6}
+                    y1={Math.round(reticles.queryScreen.y)}
+                    x2={Math.round(reticles.queryScreen.x) + 16}
+                    y2={Math.round(reticles.queryScreen.y)}
                   />
                   <line
-                    x1={reticles.queryScreen.x}
-                    y1={reticles.queryScreen.y - 16}
-                    x2={reticles.queryScreen.x}
-                    y2={reticles.queryScreen.y - 6}
+                    x1={Math.round(reticles.queryScreen.x)}
+                    y1={Math.round(reticles.queryScreen.y) - 16}
+                    x2={Math.round(reticles.queryScreen.x)}
+                    y2={Math.round(reticles.queryScreen.y) - 6}
                   />
                   <line
-                    x1={reticles.queryScreen.x}
-                    y1={reticles.queryScreen.y + 6}
-                    x2={reticles.queryScreen.x}
-                    y2={reticles.queryScreen.y + 16}
+                    x1={Math.round(reticles.queryScreen.x)}
+                    y1={Math.round(reticles.queryScreen.y) + 6}
+                    x2={Math.round(reticles.queryScreen.x)}
+                    y2={Math.round(reticles.queryScreen.y) + 16}
                   />
                 </g>
               )}
@@ -498,27 +590,27 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
               {reticles.predictedScreen && !reticles.predictedOutOfBounds && (
                 <g>
                   <polygon
-                    points={`${reticles.predictedScreen.x},${reticles.predictedScreen.y - 9} ${
-                      reticles.predictedScreen.x + 9
-                    },${reticles.predictedScreen.y} ${reticles.predictedScreen.x},${
-                      reticles.predictedScreen.y + 9
-                    } ${reticles.predictedScreen.x - 9},${reticles.predictedScreen.y}`}
+                    points={`${Math.round(reticles.predictedScreen.x)},${Math.round(reticles.predictedScreen.y) - 9} ${
+                      Math.round(reticles.predictedScreen.x) + 9
+                    },${Math.round(reticles.predictedScreen.y)} ${Math.round(reticles.predictedScreen.x)},${
+                      Math.round(reticles.predictedScreen.y) + 9
+                    } ${Math.round(reticles.predictedScreen.x) - 9},${Math.round(reticles.predictedScreen.y)}`}
                     fill="none"
-                    stroke="#FBBF24"
-                    strokeWidth={1.5}
+                    stroke={PALETTE.amber}
+                    strokeWidth={2}
                   />
                 </g>
               )}
 
               {reticles.predictedOutOfBounds && reticles.outArrow && (
                 <g
-                  transform={`translate(${reticles.outArrow.x}, ${reticles.outArrow.y}) rotate(${reticles.outArrow.angleDeg})`}
+                  transform={`translate(${Math.round(reticles.outArrow.x)}, ${Math.round(reticles.outArrow.y)}) rotate(${Math.round(reticles.outArrow.angleDeg)})`}
                 >
                   <polygon
                     points="8,0 -6,-6 -3,0 -6,6"
-                    fill="#FBBF24"
-                    stroke="#07090E"
-                    strokeWidth={0.8}
+                    fill={PALETTE.amber}
+                    stroke={PALETTE.void}
+                    strokeWidth={2}
                   />
                 </g>
               )}
@@ -527,20 +619,20 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
               {reticles.ref2010Screen && activeTarget?.referencePosition && (
                 <g>
                   <circle
-                    cx={reticles.ref2010Screen.x}
-                    cy={reticles.ref2010Screen.y}
+                    cx={Math.round(reticles.ref2010Screen.x)}
+                    cy={Math.round(reticles.ref2010Screen.y)}
                     r={7}
                     fill="none"
-                    stroke="#A78BFA"
-                    strokeWidth={1.3}
-                    strokeDasharray="2 2"
+                    stroke={PALETTE.dim}
+                    strokeWidth={2}
+                    strokeDasharray="4 2"
                   />
                   <text
-                    x={reticles.ref2010Screen.x + 10}
-                    y={reticles.ref2010Screen.y + 3}
-                    fill="#C4B5FD"
-                    fontSize={10}
-                    fontFamily="JetBrains Mono, monospace"
+                    x={Math.round(reticles.ref2010Screen.x) + 10}
+                    y={Math.round(reticles.ref2010Screen.y) + 4}
+                    fill={PALETTE.dim}
+                    fontSize={14}
+                    fontFamily="VT323, ui-monospace, monospace"
                   >
                     {lang === 'es'
                       ? activeTarget.referencePosition.labelEs
@@ -554,36 +646,36 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       )}
 
       {/* Top-Left HUD: Scale & Active Mode */}
-      <div className="absolute top-3 left-3 pointer-events-none flex flex-col gap-1 text-[11px] font-mono tabular-nums bg-[#0B0F17]/85 border border-slate-800 px-2.5 py-1.5 rounded">
-        <div className="text-slate-200 flex items-center gap-2">
+      <div className="absolute top-3 left-3 pointer-events-none flex flex-col gap-0.5 text-[14px] font-mono tabular-nums bg-panel/95 px-notch-sm px-2.5 py-1 shadow-[2px_2px_0_#000000]">
+        <div className="text-ink flex items-center gap-2">
           <span>
-            FOV {sizeArcsec}&Prime; · {pixelScaleArcsec.toFixed(2)}&Prime;/px
+            FOV {Math.round(sizeArcsec)}&Prime; · {pixelScaleArcsec.toFixed(2)}&Prime;/px
           </span>
-          <span className="text-slate-500">·</span>
+          <span className="text-dim">·</span>
           <span>{zoom.toFixed(2)}x</span>
         </div>
         {compareMode !== 'single' && (
-          <div className="text-cyan-300">
+          <div className="text-amber">
             {compareMode === 'blink'
-              ? `${t.modeBlink}: ${blinkShowRef ? 'A (Ref)' : 'B (Actual)'}`
-              : `${t.modeDiff}${isDifference ? '' : ' (Bloqueado Δλ)'}`}
+              ? `${t.modeBlink}: ${blinkShowRef ? t.blinkRefLabel : t.blinkCurrentLabel}`
+              : `${t.modeDiff}${isDifference ? '' : t.diffBlockedTag}`}
           </div>
         )}
       </div>
 
       {/* Bottom-Left HUD: Reticle Legend */}
       {showReticles && displayedFrame && (
-        <div className="absolute bottom-3 left-3 pointer-events-none flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] bg-[#0B0F17]/85 border border-slate-800 px-2.5 py-1.5 rounded">
-          <span className="inline-flex items-center gap-1.5 text-cyan-300">
+        <div className="absolute bottom-3 left-3 pointer-events-none flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] bg-panel/95 px-notch-sm px-2.5 py-1 shadow-[2px_2px_0_#000000]">
+          <span className="inline-flex items-center gap-1.5 text-ink">
             <span className="font-mono font-bold">+</span>
             <span>{t.reticleFixedLegend}</span>
           </span>
-          <span className="inline-flex items-center gap-1.5 text-amber-300">
+          <span className="inline-flex items-center gap-1.5 text-amber">
             <span className="font-mono font-bold">◇</span>
             <span>{t.reticlePredictedLegend}</span>
           </span>
           {activeTarget?.referencePosition && (
-            <span className="inline-flex items-center gap-1.5 text-violet-300">
+            <span className="inline-flex items-center gap-1.5 text-dim">
               <span className="font-mono font-bold">◌</span>
               <span>{t.reticleRef2010Legend}</span>
             </span>
@@ -591,69 +683,138 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
         </div>
       )}
 
-      {/* Explicit Error or Empty State (Never a blank unexplained canvas) */}
-      {!loading && provenance === 'error' && (
-        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#07090E]/90">
-          <div className="max-w-md border border-rose-800/70 bg-[#0F141F] rounded p-5 flex flex-col gap-3">
-            <div className="text-sm font-semibold text-rose-300">
-              ✖ {t.provenanceError}
+      {/* Loading Overlay (keeps previous frames dimmed underneath) */}
+      {loading && (
+        <div
+          className="absolute inset-0 flex items-center justify-center px-dither-overlay z-10"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="drop-shadow-[4px_4px_0_#000000]">
+            <div className="bg-panel px-notch flex flex-col">
+              <div className="h-2 w-full px-dither border-b-2 border-line" aria-hidden="true" />
+              <div className="inline-flex items-center gap-3 px-4 py-2.5 text-[15px] font-mono text-amber">
+                <div className="border-2 border-line bg-void p-1 shrink-0" aria-hidden="true">
+                  <div className="px-loading-track">
+                    <div className="px-loading-fill" />
+                  </div>
+                  <div className="px-loading-reduced">
+                    <span className="w-2 h-3 bg-amber inline-block" />
+                    <span className="w-2 h-3 bg-amber inline-block" />
+                    <span className="w-2 h-3 bg-amber inline-block" />
+                  </div>
+                </div>
+                <span>{t.loadingData}</span>
+              </div>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              {errorMessage || 'No se pudo obtener respuesta del servidor SPHEREx / IRSA.'}
-            </p>
-            <p className="text-[11px] text-slate-400">
-              {lang === 'es'
-                ? 'Por rigor científico, el modo simulado no se activa automáticamente ante un fallo real. Puedes reintentar la consulta o activar el interruptor de desarrollo.'
-                : 'For scientific integrity, simulated data never replaces failed queries automatically. Retry the request or enable the dev simulator toggle explicitly.'}
-            </p>
-            <div className="flex items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={onRetry}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium rounded transition-colors cursor-pointer"
-              >
-                <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>{t.retryButton}</span>
-              </button>
+          </div>
+        </div>
+      )}
+
+      {/* Explicit Error or Empty State (Never a blank unexplained canvas) */}
+      {!loading && provenance === 'error' && !emptyMessage && (
+        <div className="absolute inset-0 flex items-center justify-center p-6 bg-void/90 z-10">
+          <div className="max-w-md border-2 border-dashed border-bad bg-panel shadow-[4px_4px_0_#000000] flex flex-col">
+            <div className="h-2 w-full px-dither border-b-2 border-line" aria-hidden="true" />
+            <div className="p-5 flex flex-col gap-3">
+              <div className="font-pixel text-[9px] text-bad">
+                ✖ {t.provenanceError}
+              </div>
+              <p className="text-[14px] text-ink leading-snug">
+                {errorMessage || t.defaultErrorMessage}
+              </p>
+              <p className="text-[14px] text-dim leading-snug">{t.errorSimHint}</p>
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="px-btn bg-bad text-void border-bad px-3 py-1.5"
+                >
+                  <PixelRefreshIcon className="w-4 h-4" />
+                  <span>{t.retryButton}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!loading && provenance === 'error' && emptyMessage && (
+        <div className="absolute inset-0 flex items-center justify-center p-6 bg-void/90 z-10">
+          <div className="max-w-md border-2 border-dashed border-warn bg-panel shadow-[4px_4px_0_#000000] flex flex-col">
+            <div className="h-2 w-full px-dither border-b-2 border-line" aria-hidden="true" />
+            <div className="p-5 flex flex-col gap-3">
+              <div className="font-pixel text-[9px] text-warn">
+                {t.emptyCollectionTitle} ({activeCollection})
+              </div>
+              <p className="text-[14px] text-ink leading-snug">{emptyMessage}</p>
+              {activeTarget && (
+                <div className="text-[14px] font-mono tabular-nums text-dim">
+                  {t.irsaCoverageLabel}:{' '}
+                  {formatIrsaCoverage(
+                    activeTarget,
+                    collectionsForTarget(activeTarget, activeCollection),
+                    t
+                  )}
+                </div>
+              )}
+              {fallbackCollection && (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => onSwitchCollection(fallbackCollection)}
+                    className="px-btn px-btn-active px-3 py-1.5"
+                  >
+                    {t.tryAnotherCollectionButton}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
 
       {!loading && provenance !== 'error' && totalFramesCount === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#07090E]/90">
-          <div className="max-w-md border border-amber-700/70 bg-[#0F141F] rounded p-5 flex flex-col gap-3">
-            <div className="text-sm font-semibold text-amber-300">
-              ▲ {t.emptyCollectionTitle} ({activeCollection})
-            </div>
-            <p className="text-xs text-slate-300 leading-relaxed">{t.emptyCollectionBody}</p>
-            {activeTarget && (
-              <div className="text-[11px] font-mono tabular-nums text-slate-400">
-                {t.irsaCoverageLabel}: DR1 {activeTarget.irsaCoverage.dr1} · QR3{' '}
-                {activeTarget.irsaCoverage.qr3}
+        <div className="absolute inset-0 flex items-center justify-center p-6 bg-void/90 z-10">
+          <div className="max-w-md border-2 border-dashed border-warn bg-panel shadow-[4px_4px_0_#000000] flex flex-col">
+            <div className="h-2 w-full px-dither border-b-2 border-line" aria-hidden="true" />
+            <div className="p-5 flex flex-col gap-3">
+              <div className="font-pixel text-[9px] text-warn">
+                ▲ {t.emptyCollectionTitle} ({activeCollection})
               </div>
-            )}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() =>
-                  onSwitchCollection(
-                    activeCollection === 'spherex_qr3' ? 'spherex_dr1' : 'spherex_qr3'
-                  )
-                }
-                className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-xs font-semibold rounded transition-colors cursor-pointer"
-              >
-                {t.switchCollectionButton}{' '}
-                {activeCollection === 'spherex_qr3' ? 'spherex_dr1' : 'spherex_qr3'}
-              </button>
+              <p className="text-[14px] text-ink leading-snug">{t.emptyCollectionBody}</p>
+              {activeTarget && (
+                <div className="text-[14px] font-mono tabular-nums text-dim">
+                  {t.irsaCoverageLabel}:{' '}
+                  {formatIrsaCoverage(
+                    activeTarget,
+                    collectionsForTarget(activeTarget, activeCollection),
+                    t
+                  )}
+                </div>
+              )}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() =>
+                    onSwitchCollection(
+                      activeCollection === 'spherex_qr3' ? 'spherex_dr1' : 'spherex_qr3'
+                    )
+                  }
+                  className="px-btn px-btn-active px-3 py-1.5"
+                >
+                  {t.switchCollectionButton}{' '}
+                  {activeCollection === 'spherex_qr3' ? 'spherex_dr1' : 'spherex_qr3'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {!loading && provenance !== 'error' && totalFramesCount > 0 && !displayedFrame && (
-        <div className="absolute inset-0 flex items-center justify-center p-6 pointer-events-none">
-          <div className="border border-slate-800 bg-[#0F141F]/95 rounded px-4 py-3 text-xs text-slate-300">
+        <div className="absolute inset-0 flex items-center justify-center p-6 pointer-events-none z-10">
+          <div className="border-2 border-dashed border-warn bg-panel px-4 py-3 text-[14px] text-warn shadow-[4px_4px_0_#000000]">
             {t.noDataTitle}
           </div>
         </div>

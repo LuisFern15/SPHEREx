@@ -5,19 +5,24 @@ import {
   getDefaultTarget,
   propagatePosition,
 } from '../data/targets';
-import { CollectionShortCode, UrlViewerState } from '../types/spherex';
+import { CollectionName, CollectionShortCode, UrlViewerState } from '../types/spherex';
 
 export function clampFieldSize(size: number): number {
   if (!Number.isFinite(size)) return 200;
   return Math.max(100, Math.min(300, Math.round(size)));
 }
 
-export function colToCollection(col: CollectionShortCode): string {
-  return col === 'dr1' ? 'spherex_dr1' : 'spherex_qr3';
+export function colToCollection(col: CollectionShortCode): CollectionName {
+  if (col === 'dr1') return 'spherex_dr1';
+  if (col === 'both') return 'spherex_both';
+  return 'spherex_qr3';
 }
 
 export function collectionToCol(collection: string): CollectionShortCode {
-  return collection === 'spherex_dr1' || collection === 'dr1' ? 'dr1' : 'qr3';
+  const normalized = collection.trim().toLowerCase();
+  if (normalized === 'spherex_dr1' || normalized === 'dr1') return 'dr1';
+  if (normalized === 'spherex_both' || normalized === 'both') return 'both';
+  return 'qr3';
 }
 
 function angularSepArcsec(ra1: number, dec1: number, ra2: number, dec2: number): number {
@@ -79,12 +84,20 @@ export function getInitialUrlState(): UrlViewerState {
   const bandVal = Math.max(0, Math.min(6, Math.round(parseNum('band', defaults.band))));
   const bandContrast = DEFAULT_BAND_CONTRAST[bandVal] ?? defaultContrast;
 
+  const rawMin = parseNum('min', bandContrast.min);
+  const rawMax = parseNum('max', bandContrast.max);
+  const validContrast = rawMin < rawMax;
+  const min = validContrast ? rawMin : bandContrast.min;
+  const max = validContrast ? rawMax : bandContrast.max;
+
   const rawCol = (params.get('col') ?? params.get('collection'))?.trim().toLowerCase();
   const col: CollectionShortCode =
     rawCol === 'dr1' || rawCol === 'spherex_dr1'
       ? 'dr1'
       : rawCol === 'qr3' || rawCol === 'spherex_qr3'
       ? 'qr3'
+      : rawCol === 'both' || rawCol === 'spherex_both'
+      ? 'both'
       : inferDefaultColForCoords(ra, dec);
 
   return {
@@ -94,8 +107,8 @@ export function getInitialUrlState(): UrlViewerState {
     band: bandVal,
     col,
     speed: Math.max(100, Math.min(2000, Math.round(parseNum('speed', defaults.speed)))),
-    min: parseNum('min', bandContrast.min),
-    max: parseNum('max', bandContrast.max),
+    min,
+    max,
     i: Math.max(0, Math.floor(parseNum('i', 0))),
     flags: params.get('flags') === '0' ? 0 : 1,
     cat: params.get('cat') === '1' ? 1 : 0,

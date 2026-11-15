@@ -6,6 +6,16 @@ import {
   computeViewportTransform,
 } from './cutoutRenderer';
 
+const RENDERER_PALETTE = {
+  void: '#0a0814',
+  voidOverlay: 'rgba(10, 8, 20, 0.72)',
+  line: '#3a3566',
+  bad: '#ff4d6d',
+  nanR: 20,
+  nanG: 17,
+  nanB: 38,
+} as const;
+
 export class Canvas2DRenderer implements CutoutRenderer {
   private offscreen: HTMLCanvasElement;
   private offscreenCtx: CanvasRenderingContext2D | null;
@@ -66,9 +76,9 @@ export class Canvas2DRenderer implements CutoutRenderer {
         }
 
         if (!Number.isFinite(val)) {
-          out[dstIdx] = 15;
-          out[dstIdx + 1] = 23;
-          out[dstIdx + 2] = 42;
+          out[dstIdx] = RENDERER_PALETTE.nanR;
+          out[dstIdx + 1] = RENDERER_PALETTE.nanG;
+          out[dstIdx + 2] = RENDERER_PALETTE.nanB;
           out[dstIdx + 3] = 255;
           continue;
         }
@@ -93,7 +103,7 @@ export class Canvas2DRenderer implements CutoutRenderer {
 
     // Clear main canvas
     ctx.save();
-    ctx.fillStyle = '#07090E';
+    ctx.fillStyle = RENDERER_PALETTE.void;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const transform = computeViewportTransform(
@@ -117,11 +127,11 @@ export class Canvas2DRenderer implements CutoutRenderer {
     );
 
     // Subtle cutout boundary frame
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = RENDERER_PALETTE.line;
+    ctx.lineWidth = 2;
     ctx.strokeRect(
-      Math.round(transform.drawX) + 0.5,
-      Math.round(transform.drawY) + 0.5,
+      Math.round(transform.drawX),
+      Math.round(transform.drawY),
       Math.round(transform.drawW),
       Math.round(transform.drawH)
     );
@@ -138,21 +148,21 @@ export class Canvas2DRenderer implements CutoutRenderer {
       ctx.translate(cx, cy);
       ctx.rotate(-Math.PI / 7);
 
-      const fontSize = Math.max(13, Math.round(Math.min(transform.drawW, transform.drawH) * 0.085));
-      ctx.font = `700 ${fontSize}px "JetBrains Mono", monospace`;
+      const fontSize = Math.max(16, Math.round(Math.min(transform.drawW, transform.drawH) * 0.085));
+      ctx.font = `700 ${fontSize}px "VT323", ui-monospace, "Courier New", monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      ctx.fillStyle = 'rgba(7, 9, 14, 0.52)';
+      ctx.fillStyle = RENDERER_PALETTE.voidOverlay;
       const boxW = fontSize * 12.5;
       const boxH = fontSize * 1.9;
-      ctx.fillRect(-boxW * 0.5, -boxH * 0.5, boxW, boxH);
+      ctx.fillRect(Math.round(-boxW * 0.5), Math.round(-boxH * 0.5), Math.round(boxW), Math.round(boxH));
 
-      ctx.strokeStyle = 'rgba(245, 158, 11, 0.85)';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(-boxW * 0.5, -boxH * 0.5, boxW, boxH);
+      ctx.strokeStyle = RENDERER_PALETTE.bad;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(Math.round(-boxW * 0.5), Math.round(-boxH * 0.5), Math.round(boxW), Math.round(boxH));
 
-      ctx.fillStyle = 'rgba(251, 191, 36, 0.95)';
+      ctx.fillStyle = RENDERER_PALETTE.bad;
       ctx.fillText('SIMULADO / SIMULATED', 0, 0);
       ctx.restore();
     }

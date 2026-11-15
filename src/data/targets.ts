@@ -1,8 +1,9 @@
-import { BandContrast, TargetPreset } from '../types/spherex';
+import type { TranslationStrings } from '../i18n/translations';
+import { BandContrast, RawSpherexFrame, TargetPreset } from '../types/spherex';
 
 export const DEFAULT_TARGET_ID = 'barnard';
 
-export const AVAILABLE_COLLECTIONS = ['spherex_qr3', 'spherex_dr1'] as const;
+export const AVAILABLE_COLLECTIONS = ['spherex_dr1', 'spherex_qr3', 'spherex_both'] as const;
 
 export const SPHEREX_BANDS: Record<
   number,
@@ -43,14 +44,14 @@ export const TARGET_PRESETS: TargetPreset[] = [
     pmdec: 10362.394,
     defaultBand: 0,
     defaultSize: 200,
-    collections: ['spherex_qr3', 'spherex_dr1'],
-    defaultCollection: 'spherex_qr3',
-    irsaCoverage: { dr1: 239, qr3: 119 },
+    collections: ['spherex_dr1', 'spherex_qr3', 'spherex_both'],
+    defaultCollection: 'spherex_both',
+    irsaCoverage: { dr1: 239, qr3: 121 },
     changeType: 'proper_motion',
     notesEs:
-      'Se mueve ~10.4"/año (1.69 px/año) hacia el norte. Probable saturación del núcleo (J ≈ 5.2): activar capa de banderas para distinguir saturación y persistencia.',
+      'Estrella con el mayor movimiento propio conocido: ~10.4″/año (1.69 px/año) hacia el norte. Con "Ambas" (DR1 + QR3, de agosto de 2025 a septiembre de 2026) el desplazamiento acumulado es de ~1.9 px; medido con estos datos de SPHEREx: +10.6″/año. El núcleo aparece saturado: activa la capa de banderas para distinguir saturación y persistencia.',
     notesEn:
-      'Moves ~10.4"/yr (1.69 px/yr) northward. Probable core saturation (J ≈ 5.2): inspect quality flags to separate saturation and persistence artifacts.',
+      'The star with the largest known proper motion: ~10.4″/yr (1.69 px/yr) northward. With "Both" (DR1 + QR3, August 2025 to September 2026) the accumulated shift is ~1.9 px; measured from these SPHEREx data: +10.6″/yr. The core is saturated: turn on the flag layer to tell saturation from persistence.',
   },
   {
     id: 'wise0855',
@@ -76,9 +77,9 @@ export const TARGET_PRESETS: TargetPreset[] = [
       labelEn: 'Prompt ref. (~2010, inferred epoch)',
     },
     notesEs:
-      'Enana marrón tipo Y sin entrada en Gaia. La predicción de su posición para 2026 tiene una incertidumbre de ±0.5″. Una publicación de 2026 (Rustamkulov et al., arXiv:2607.00543, pendiente de verificación por nuestro equipo) la reporta con SPHEREx siendo fiable únicamente por encima de 3.9 µm (bandas 5 y 6). Solo tiene datos en DR1 (258 exposiciones) y ninguno en QR3 (0). Coordenadas del enunciado (133.7951292, −7.2451472) mostradas solo como referencia (~2010, época inferida).',
+      'Enana marrón tipo Y, la más fría conocida, sin entrada en Gaia; posición de Kirkpatrick et al. 2021 propagada a la fecha de cada cuadro (±0.5″ en 2026). Se mueve ~8.2″/año (1.33 px/año) hacia el oeste. Solo hay datos en DR1 (mayo de 2025 a mayo de 2026). Es muy débil: en estos datos la detección es marginal (z entre 0.5 y 3.4 según la banda; en B6, z ≈ 2.1), coherente con Rustamkulov et al. 2026 (arXiv:2607.00543), que la detecta con fiabilidad solo por encima de 3.9 µm. Las coordenadas del enunciado (133.7951292, −7.2451472) se muestran solo como referencia (~2010, época inferida).',
     notesEn:
-      'Y-type brown dwarf with no Gaia entry. Predicted 2026 position has ±0.5″ uncertainty. A 2026 paper (Rustamkulov et al., arXiv:2607.00543, pending verification by our team) reports SPHEREx detection as reliable only above 3.9 µm (Bands 5 and 6). Available only in DR1 (258 exposures) with 0 in QR3. Prompt coordinates (133.7951292, −7.2451472) shown solely as an uncentered reference (~2010, inferred epoch).',
+      'Y-type brown dwarf, the coldest known, with no Gaia entry; position from Kirkpatrick et al. 2021 propagated to each frame\'s date (±0.5″ in 2026). Moves ~8.2″/yr (1.33 px/yr) westward. Data exist only in DR1 (May 2025 to May 2026). It is very faint: in these data the detection is marginal (z between 0.5 and 3.4 depending on band; in B6, z ≈ 2.1), consistent with Rustamkulov et al. 2026 (arXiv:2607.00543), who detect it reliably only above 3.9 µm. The challenge coordinates (133.7951292, −7.2451472) are shown only as a reference (~2010, inferred epoch).',
   },
   {
     id: 'epsindib',
@@ -92,14 +93,14 @@ export const TARGET_PRESETS: TargetPreset[] = [
     pmdec: -2466.832,
     defaultBand: 0,
     defaultSize: 200,
-    collections: ['spherex_qr3', 'spherex_dr1'],
-    defaultCollection: 'spherex_qr3',
+    collections: ['spherex_dr1', 'spherex_qr3', 'spherex_both'],
+    defaultCollection: 'spherex_both',
     irsaCoverage: { dr1: 343, qr3: 120 },
     changeType: 'unresolved_pair',
     notesEs:
-      'Par de enanas marrones T1 + T6 separadas menos de 1.1": se ven como un único punto sin resolver a 6.15"/px. La estrella brillante ε Indi A está a 402", fuera de un campo de 300". En QR3 solo existen datos en las bandas 2, 3, 5 y 6. En SIMBAD debe buscarse como "eps Ind B" con B mayúscula (ya que "eps Ind" devuelve la primaria A).',
+      'Par de enanas marrones T1 + T6 separadas menos de 1.1″: SPHEREx las ve como un solo punto (6.15″/px). Se mueve ~4.7″/año (0.76 px/año) hacia el sureste. Detección clara en las bandas 2 a 6 (z entre 34 y 104 en estos datos). En QR3 solo hay datos en las bandas 2, 3, 5 y 6. La estrella ε Indi A está a 402″, fuera del recorte de 200″. En SIMBAD se busca como "eps Ind B".',
     notesEn:
-      'T1 + T6 brown dwarf binary separated by < 1.1": appears as a single unresolved point source at 6.15"/px. Bright host ε Indi A lies 402" away, outside a 300" cutout. QR3 contains data only in Bands 2, 3, 5, and 6. Search SIMBAD as "eps Ind B" with uppercase B ("eps Ind" returns primary star A).',
+      'T1 + T6 brown-dwarf pair separated by less than 1.1″: SPHEREx sees them as a single point (6.15″/px). Moves ~4.7″/yr (0.76 px/yr) to the southeast. Clear detection in Bands 2 to 6 (z between 34 and 104 in these data). QR3 has data only in Bands 2, 3, 5 and 6. The star ε Indi A lies 402″ away, outside the 200″ cutout. Search SIMBAD for "eps Ind B".',
   },
   {
     id: 'rwaur',
@@ -113,14 +114,14 @@ export const TARGET_PRESETS: TargetPreset[] = [
     pmdec: -25.99,
     defaultBand: 0,
     defaultSize: 200,
-    collections: ['spherex_qr3', 'spherex_dr1'],
-    defaultCollection: 'spherex_qr3',
+    collections: ['spherex_dr1', 'spherex_qr3', 'spherex_both'],
+    defaultCollection: 'spherex_both',
     irsaCoverage: { dr1: 226, qr3: 110 },
     changeType: 'variability',
     notesEs:
-      'Se usa el punto medio de ambas fuentes Gaia DR3 porque SPHEREx no resuelve el par (0.24 px) y en SIMBAD/Gaia las etiquetas A y B están invertidas respecto a la literatura; aquí seguimos la convención de la literatura (A = noreste, con el jet y los eclipses). Un eclipse profundo de A comenzó en febrero de 2025 y no sabemos si continúa en 2026. Cerca del plano galáctico (b ≈ −6°). Comparar cuadros con wave_um similar.',
+      'Sistema joven A + B con disco, separado ~1.45″ (0.24 px): SPHEREx no lo resuelve, por eso se centra en el punto medio de las dos fuentes de Gaia DR3 (que invierten las etiquetas A y B respecto a la literatura; aquí A = noreste, la del chorro y los eclipses). Aquí el cambio es de brillo, no de posición. Una caída profunda del brillo de A comenzó en febrero de 2025; los reportes publicados llegan a octubre de 2025 y no sabemos si continúa. Cerca del plano galáctico (b ≈ −6°): compara cuadros con wave_um parecido.',
     notesEn:
-      'Centered on the Gaia DR3 midpoint because SPHEREx does not resolve the pair (0.24 px) and SIMBAD/Gaia invert the A/B labels relative to literature; here A = northeast (with jet and eclipses) per literature convention. A deep eclipse of A began in Feb 2025 and may still be ongoing in 2026. Near the galactic plane (b ≈ −6°). Compare frames at matching wave_um.',
+      'Young A + B system with a disk, separated by ~1.45″ (0.24 px): SPHEREx does not resolve it, so the view is centered on the midpoint of the two Gaia DR3 sources (which swap the A and B labels relative to the literature; here A = northeast, the one with the jet and eclipses). The change here is in brightness, not position. A deep dimming of A began in February 2025; published reports reach October 2025 and we do not know whether it continues. Near the galactic plane (b ≈ −6°): compare frames with similar wave_um.',
   },
   {
     id: 'rdra',
@@ -134,16 +135,87 @@ export const TARGET_PRESETS: TargetPreset[] = [
     pmdec: 6.149,
     defaultBand: 0,
     defaultSize: 200,
-    collections: ['spherex_qr3', 'spherex_dr1'],
-    defaultCollection: 'spherex_qr3',
-    irsaCoverage: { dr1: 414, qr3: 126 },
+    collections: ['spherex_dr1', 'spherex_qr3', 'spherex_both'],
+    defaultCollection: 'spherex_both',
+    irsaCoverage: { dr1: 417, qr3: 126 },
     changeType: 'variability',
     notesEs:
-      'Inmóvil a escala de píxel (0.0035 px/año). Su período es 246.12 días según AAVSO VSX y 245.6 días según GCVS, y sus fechas de máximo difieren unos 73 días sin comprobar con una curva de luz. El núcleo saturará en todas las bandas.',
+      'Variable Mira (M5e–M9IIIe) inmóvil a escala de píxel (0.0035 px/año): aquí el cambio es de brillo, no de posición. Período de 245.6 días (GCVS) o 246.12 días (AAVSO VSX); las fechas de máximo de ambas fuentes difieren ~73 días y no están comprobadas con una curva de luz. El núcleo satura en todas las bandas durante todo el período de los datos: compara el halo, no el pico.',
     notesEn:
-      'Stationary at pixel scale (0.0035 px/yr). Period is 246.12 days per AAVSO VSX and 245.6 days per GCVS, with predicted maxima differing by ~73 days (unverified against a light curve). Core will saturate across all bands.',
+      'Mira variable (M5e–M9IIIe), stationary at pixel scale (0.0035 px/yr): the change here is in brightness, not position. Period of 245.6 days (GCVS) or 246.12 days (AAVSO VSX); the predicted maxima from the two sources differ by ~73 days and are not checked against a light curve. The core saturates in every band throughout the data: compare the halo, not the peak.',
   },
 ];
+
+export function collectionsForTarget(
+  target: TargetPreset | null,
+  activeCollection?: string
+): string[] {
+  const ordered: string[] = target
+    ? AVAILABLE_COLLECTIONS.filter((col) => target.collections.includes(col))
+    : [...AVAILABLE_COLLECTIONS];
+
+  if (activeCollection && !ordered.includes(activeCollection)) {
+    return [activeCollection, ...ordered];
+  }
+  return ordered;
+}
+
+export function formatIrsaCoverage(
+  target: TargetPreset,
+  collections: readonly string[],
+  t: Pick<TranslationStrings, 'collectionBoth'>
+): string {
+  const parts: string[] = [];
+  if (collections.includes('spherex_dr1') && target.collections.includes('spherex_dr1')) {
+    parts.push(`DR1 ${target.irsaCoverage.dr1}`);
+  }
+  if (collections.includes('spherex_qr3') && target.collections.includes('spherex_qr3')) {
+    parts.push(`QR3 ${target.irsaCoverage.qr3}`);
+  }
+  if (collections.includes('spherex_both') && target.collections.includes('spherex_both')) {
+    parts.push(`${t.collectionBoth} ${target.irsaCoverage.dr1 + target.irsaCoverage.qr3}`);
+  }
+  return parts.join(' · ');
+}
+
+export function formatLoadedFramesByCollection(
+  frames: readonly Pick<RawSpherexFrame, 'collection'>[]
+): string | null {
+  const counts = new Map<string, number>();
+  for (const frame of frames) {
+    const raw = frame.collection?.trim();
+    if (!raw) continue;
+    const lower = raw.toLowerCase();
+    const key =
+      lower === 'spherex_dr1' || lower === 'dr1'
+        ? 'spherex_dr1'
+        : lower === 'spherex_qr3' || lower === 'qr3'
+        ? 'spherex_qr3'
+        : raw;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  if (counts.size === 0) return null;
+
+  const orderedKeys: string[] = [];
+  for (const col of AVAILABLE_COLLECTIONS) {
+    if (col !== 'spherex_both' && counts.has(col)) {
+      orderedKeys.push(col);
+    }
+  }
+  for (const key of counts.keys()) {
+    if (!orderedKeys.includes(key)) {
+      orderedKeys.push(key);
+    }
+  }
+
+  return orderedKeys
+    .map((key) => {
+      const label = key === 'spherex_dr1' ? 'DR1' : key === 'spherex_qr3' ? 'QR3' : key;
+      return `${label} ${counts.get(key)}`;
+    })
+    .join(' · ');
+}
 
 export function dateToJulianYear(date: Date): number {
   const msPerJulianYear = 365.25 * 86400 * 1000;

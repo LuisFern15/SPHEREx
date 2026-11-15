@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { Eye, Layers, Pin, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
-import { AVAILABLE_COLLECTIONS } from '../data/targets';
+import {
+  collectionsForTarget,
+  formatIrsaCoverage,
+  formatLoadedFramesByCollection,
+} from '../data/targets';
 import { TranslationStrings } from '../i18n/translations';
 import { getColormapPreviewGradient } from '../rendering/colormaps';
 import {
@@ -11,6 +14,23 @@ import {
   TargetPreset,
 } from '../types/spherex';
 import { HoveredPixelInfo } from './CutoutViewport';
+import {
+  PixelEyeIcon,
+  PixelLayersIcon,
+  PixelPinIcon,
+  PixelRotateCcwIcon,
+  PixelZoomInIcon,
+  PixelZoomOutIcon,
+} from './PixelIcons';
+
+const BAND_SWATCH_CLASSES: Record<number, string> = {
+  1: 'bg-b1',
+  2: 'bg-b2',
+  3: 'bg-b3',
+  4: 'bg-b4',
+  5: 'bg-b5',
+  6: 'bg-b6',
+};
 
 interface RightPanelProps {
   t: TranslationStrings;
@@ -18,6 +38,7 @@ interface RightPanelProps {
   collection: string;
   onChangeCollection: (col: string) => void;
   activeTarget: TargetPreset | null;
+  frames?: DecodedSpherexFrame[];
   band: number;
   min: number;
   max: number;
@@ -65,6 +86,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   collection,
   onChangeCollection,
   activeTarget,
+  frames = [],
   band,
   min,
   max,
@@ -99,18 +121,21 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   const sliderMaxBound = Math.max(200, Math.ceil(max + 50));
 
   const diffBlocked = Boolean(deltaLambdaInfo?.exceedsHalfChannel && !allowUnsafeDiff);
+  const availableCollections = collectionsForTarget(activeTarget, collection);
+  const loadedFramesSummary = formatLoadedFramesByCollection(frames);
 
   return (
-    <aside className="w-full lg:w-[340px] bg-[#0B0F17] border-t lg:border-t-0 lg:border-l border-slate-800 flex flex-col shrink-0 overflow-hidden">
+    <aside className="w-full lg:w-[300px] px-panel flex flex-col shrink-0 overflow-hidden">
+      <div className="h-2 w-full px-dither border-b-2 border-line shrink-0" aria-hidden="true" />
       {/* Reserved Tabs: Calibración (Active) + Espectro (Capa 2) + Asistente (Capa 4) */}
-      <div className="grid grid-cols-3 border-b border-slate-800 bg-[#07090E] text-[11px] shrink-0">
+      <div className="grid grid-cols-3 border-b-2 border-line bg-void text-[14px] shrink-0">
         <button
           type="button"
           onClick={() => setActiveTab('calibration')}
-          className={`px-2 py-2.5 font-medium border-b-2 transition-colors truncate cursor-pointer ${
+          className={`px-1 py-2 border-b-2 text-center leading-tight cursor-pointer focus-visible:outline-2 focus-visible:outline-dashed focus-visible:outline-amber focus-visible:-outline-offset-2 ${
             activeTab === 'calibration'
-              ? 'border-cyan-500 text-cyan-200 bg-[#0F141F]'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-amber text-amber bg-panel-hi'
+              : 'border-transparent text-dim hover:text-ink hover:bg-panel'
           }`}
         >
           {t.tabCalibration}
@@ -119,10 +144,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           type="button"
           onClick={() => setActiveTab('spectrum')}
           title={t.futureLayerNote}
-          className={`px-2 py-2.5 font-medium border-b-2 transition-colors truncate cursor-pointer ${
+          className={`px-1 py-2 border-b-2 border-l-2 border-l-line text-center leading-tight cursor-pointer focus-visible:outline-2 focus-visible:outline-dashed focus-visible:outline-amber focus-visible:-outline-offset-2 ${
             activeTab === 'spectrum'
-              ? 'border-slate-500 text-slate-200 bg-[#0F141F]'
-              : 'border-transparent text-slate-500 hover:text-slate-300'
+              ? 'border-b-amber text-amber bg-panel-hi'
+              : 'border-b-transparent text-dim hover:text-ink hover:bg-panel'
           }`}
         >
           {t.tabSpectrumFuture}
@@ -131,10 +156,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           type="button"
           onClick={() => setActiveTab('assistant')}
           title={t.futureLayerNote}
-          className={`px-2 py-2.5 font-medium border-b-2 transition-colors truncate cursor-pointer ${
+          className={`px-1 py-2 border-b-2 border-l-2 border-l-line text-center leading-tight cursor-pointer focus-visible:outline-2 focus-visible:outline-dashed focus-visible:outline-amber focus-visible:-outline-offset-2 ${
             activeTab === 'assistant'
-              ? 'border-slate-500 text-slate-200 bg-[#0F141F]'
-              : 'border-transparent text-slate-500 hover:text-slate-300'
+              ? 'border-b-amber text-amber bg-panel-hi'
+              : 'border-b-transparent text-dim hover:text-ink hover:bg-panel'
           }`}
         >
           {t.tabAssistantFuture}
@@ -142,64 +167,76 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       </div>
 
       {activeTab !== 'calibration' ? (
-        <div className="p-5 flex flex-col gap-2 text-xs text-slate-400">
-          <div className="font-semibold text-slate-200">
+        <div className="p-5 flex flex-col gap-2 text-[14px] text-dim">
+          <div className="font-pixel text-[9px] text-ink">
             {activeTab === 'spectrum' ? t.tabSpectrumFuture : t.tabAssistantFuture}
           </div>
-          <p className="leading-relaxed">{t.futureLayerNote}</p>
+          <p className="leading-snug">{t.futureLayerNote}</p>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-4 text-xs">
+        <div className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-4 text-[14px]">
           {/* IRSA Collection Selector & Verified Coverage */}
-          <section className="flex flex-col gap-2 border-b border-slate-800/80 pb-3.5">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold text-slate-200">{t.collectionLabel}</span>
-              <div className="grid grid-cols-2 gap-1 bg-[#07090E] p-0.5 rounded border border-slate-800">
-                {AVAILABLE_COLLECTIONS.map((col) => (
+          <section className="flex flex-col gap-2 border-b-2 border-line pb-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-pixel text-[8px] text-ink">{t.collectionLabel}</span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {availableCollections.map((col) => (
                   <button
                     key={col}
                     type="button"
                     onClick={() => onChangeCollection(col)}
-                    className={`px-2 py-1 rounded font-mono text-[11px] transition-colors cursor-pointer ${
-                      collection === col
-                        ? 'bg-cyan-600 text-slate-950 font-semibold'
-                        : 'text-slate-300 hover:text-white'
+                    className={`px-btn px-btn-vt px-2 py-0.5 ${
+                      collection === col ? 'px-btn-active' : ''
                     }`}
                   >
-                    {col}
+                    {col === 'spherex_both' ? t.collectionBoth : col}
                   </button>
                 ))}
               </div>
             </div>
             {activeTarget && (
-              <div className="flex items-center justify-between text-[11px] font-mono tabular-nums text-slate-400 bg-[#07090E] border border-slate-800/80 rounded px-2.5 py-1">
+              <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-[14px] font-mono tabular-nums text-dim bg-void px-notch-sm px-2.5 py-1">
                 <span>{t.irsaCoverageLabel}</span>
-                <span className="text-slate-200">
-                  DR1: {activeTarget.irsaCoverage.dr1} · QR3: {activeTarget.irsaCoverage.qr3}
+                <span className="text-ink">
+                  {formatIrsaCoverage(activeTarget, availableCollections, t)}
                 </span>
+              </div>
+            )}
+            {loadedFramesSummary && (
+              <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-[14px] font-mono tabular-nums text-dim bg-void px-notch-sm px-2.5 py-1">
+                <span>{t.framesLoadedLabel}:</span>{' '}
+                <span className="text-ink">{loadedFramesSummary}</span>
               </div>
             )}
           </section>
 
           {/* Shared Per-Band asinh Contrast */}
-          <section className="flex flex-col gap-2.5 border-b border-slate-800/80 pb-3.5">
+          <section className="flex flex-col gap-2.5 border-b-2 border-line pb-3.5">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold text-slate-200">
-                {t.contrastPerBand} ({band === 0 ? t.allBands : `B${band}`})
+              <span className="inline-flex items-center gap-2 font-pixel text-[8px] text-ink">
+                {band >= 1 && band <= 6 && (
+                  <span
+                    className={`w-[10px] h-[10px] inline-block shrink-0 border border-void ${BAND_SWATCH_CLASSES[band]}`}
+                    aria-hidden="true"
+                  />
+                )}
+                <span>
+                  <span>{t.contrastPerBand}</span> ({band === 0 ? t.allBands : `B${band}`})
+                </span>
               </span>
               <button
                 type="button"
                 onClick={onAutoContrast}
-                className="px-2 py-0.5 rounded border border-slate-700 bg-[#07090E] text-[11px] text-cyan-300 hover:border-cyan-500 transition-colors cursor-pointer"
+                className="px-btn px-2 py-1 shrink-0"
               >
                 Auto
               </button>
             </div>
 
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-[11px] text-slate-400">
+              <div className="flex justify-between text-[14px] text-dim">
                 <span>{t.blackPoint}</span>
-                <span className="font-mono tabular-nums text-slate-200">
+                <span className="font-mono tabular-nums text-ink">
                   {min.toFixed(2)} MJy/sr
                 </span>
               </div>
@@ -210,14 +247,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 step={0.25}
                 value={min}
                 onChange={(e) => onMinChange(parseFloat(e.target.value))}
-                className="sci-slider w-full"
+                className="px-slider w-full"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-[11px] text-slate-400">
+              <div className="flex justify-between text-[14px] text-dim">
                 <span>{t.whitePoint}</span>
-                <span className="font-mono tabular-nums text-slate-200">
+                <span className="font-mono tabular-nums text-ink">
                   {max.toFixed(2)} MJy/sr
                 </span>
               </div>
@@ -228,14 +265,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 step={0.5}
                 value={max}
                 onChange={(e) => onMaxChange(parseFloat(e.target.value))}
-                className="sci-slider w-full"
+                className="px-slider w-full"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-[11px] text-slate-400">
+              <div className="flex justify-between text-[14px] text-dim">
                 <span>{t.softeningAsinh}</span>
-                <span className="font-mono tabular-nums text-slate-200">
+                <span className="font-mono tabular-nums text-ink">
                   {softening.toFixed(2)}
                 </span>
               </div>
@@ -246,22 +283,22 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 step={0.1}
                 value={softening}
                 onChange={(e) => onSofteningChange(parseFloat(e.target.value))}
-                className="sci-slider w-full"
+                className="px-slider w-full"
               />
             </div>
           </section>
 
           {/* Scientific Colormap + Zoom */}
-          <section className="flex flex-col gap-2.5 border-b border-slate-800/80 pb-3.5">
+          <section className="flex flex-col gap-2.5 border-b-2 border-line pb-3.5">
             <div className="flex items-center justify-between gap-2">
-              <label htmlFor="cmap-select" className="font-semibold text-slate-200">
+              <label htmlFor="cmap-select" className="font-pixel text-[8px] text-ink">
                 {t.paletteLabel}
               </label>
               <select
                 id="cmap-select"
                 value={colormap}
                 onChange={(e) => onColormapChange(e.target.value as ColormapName)}
-                className="bg-[#07090E] border border-slate-700 rounded px-2 py-1 text-xs text-slate-100 outline-none focus:border-cyan-500"
+                className="px-select px-2 py-0.5"
               >
                 {COLORMAPS.map((cm) => (
                   <option key={cm.id} value={cm.id}>
@@ -271,39 +308,39 @@ export const RightPanel: React.FC<RightPanelProps> = ({
               </select>
             </div>
             <div
-              className="h-2 w-full rounded-sm border border-slate-700"
+              className="h-2.5 w-full border-2 border-line"
               style={{ background: getColormapPreviewGradient(colormap) }}
             />
 
             <div className="flex items-center justify-between pt-1">
-              <span className="text-slate-300 font-medium">{t.zoomPanLabel}</span>
-              <div className="flex items-center gap-1">
+              <span className="text-ink">{t.zoomPanLabel}</span>
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => onZoomChange(Math.max(0.5, Number((zoom / 1.25).toFixed(2))))}
-                  aria-label="Zoom out"
-                  className="p-1.5 rounded border border-slate-700 bg-[#07090E] text-slate-300 hover:border-cyan-500 cursor-pointer"
+                  aria-label={t.zoomOutLabel}
+                  className="px-btn p-1.5"
                 >
-                  <ZoomOut className="w-3.5 h-3.5" aria-hidden="true" />
+                  <PixelZoomOutIcon className="w-4 h-4" />
                 </button>
-                <span className="font-mono tabular-nums text-[11px] px-1.5 text-slate-200">
+                <span className="font-mono tabular-nums text-[14px] px-1 text-ink">
                   {zoom.toFixed(1)}x
                 </span>
                 <button
                   type="button"
                   onClick={() => onZoomChange(Math.min(8, Number((zoom * 1.25).toFixed(2))))}
-                  aria-label="Zoom in"
-                  className="p-1.5 rounded border border-slate-700 bg-[#07090E] text-slate-300 hover:border-cyan-500 cursor-pointer"
+                  aria-label={t.zoomInLabel}
+                  className="px-btn p-1.5"
                 >
-                  <ZoomIn className="w-3.5 h-3.5" aria-hidden="true" />
+                  <PixelZoomInIcon className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
                   onClick={onResetView}
                   title={t.resetView}
-                  className="px-2 py-1 rounded border border-slate-700 bg-[#07090E] text-[11px] text-slate-300 hover:border-cyan-500 inline-flex items-center gap-1 cursor-pointer"
+                  className="px-btn px-2 py-1"
                 >
-                  <RotateCcw className="w-3 h-3" aria-hidden="true" />
+                  <PixelRotateCcwIcon className="w-4 h-4" />
                   <span>{t.resetView}</span>
                 </button>
               </div>
@@ -311,88 +348,93 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           </section>
 
           {/* Overlays */}
-          <section className="flex flex-col gap-2 border-b border-slate-800/80 pb-3.5">
-            <div className="flex items-center gap-1.5 font-semibold text-slate-200">
-              <Layers className="w-3.5 h-3.5 text-cyan-400" aria-hidden="true" />
+          <section className="flex flex-col gap-2 border-b-2 border-line pb-3.5">
+            <div className="flex items-center gap-2 font-pixel text-[8px] text-ink">
+              <PixelLayersIcon className="w-4 h-4 text-amber" />
               <span>{t.overlaysLabel}</span>
             </div>
 
-            <label className="flex items-center justify-between gap-2 cursor-pointer text-slate-300">
+            <label className="flex items-center justify-between gap-2 cursor-pointer text-ink">
               <span>{t.toggleFlags}</span>
               <input
                 type="checkbox"
                 checked={showFlags}
                 onChange={onToggleFlags}
-                className="accent-cyan-500"
+                className="px-check"
               />
             </label>
 
             {showFlags && (
-              <div className="flex flex-col gap-1 text-[11px] pl-1 pb-1">
+              <div className="flex flex-col gap-1 text-[14px] pl-1 pb-1">
                 <div className="flex flex-wrap gap-x-3 gap-y-1">
-                  <span className="text-rose-400 font-mono">■ OVERFLOW/NONLINEAR</span>
-                  <span className="text-amber-400 font-mono">□ PERSIST</span>
-                  <span className="text-cyan-300 font-mono">□ SOURCE</span>
-                  <span className="text-fuchsia-400 font-mono">× NONFUNC/BAD</span>
+                  <span className="text-bad font-mono">■ OVERFLOW/NONLINEAR</span>
+                  <span className="text-warn font-mono">□ PERSIST</span>
+                  <span className="text-ink/60 font-mono">× NONFUNC/BAD</span>
                 </div>
-                <div className="text-[10px] text-slate-400 leading-snug">
+                <div className="text-[14px] text-dim leading-snug">
                   <div>{t.transientFlagHelp}</div>
-                  <div>{t.sourceFlagHelp}</div>
+                  <div>{t.infoFlagsOverlayNote}</div>
                 </div>
               </div>
             )}
 
-            <label className="flex items-center justify-between gap-2 cursor-pointer text-slate-300">
+            <label className="flex items-center justify-between gap-2 cursor-pointer text-ink">
               <span>{t.toggleCatalog}</span>
               <input
                 type="checkbox"
                 checked={showCatalog}
                 onChange={onToggleCatalog}
-                className="accent-cyan-500"
+                className="px-check"
               />
             </label>
 
-            <label className="flex items-center justify-between gap-2 cursor-pointer text-slate-300">
+            <label className="flex items-center justify-between gap-2 cursor-pointer text-ink">
               <span>{t.toggleReticles}</span>
               <input
                 type="checkbox"
                 checked={showReticles}
                 onChange={onToggleReticles}
-                className="accent-cyan-500"
+                className="px-check"
               />
             </label>
           </section>
 
           {/* A/B Blink & Difference with Δλ Guard */}
-          <section className="flex flex-col gap-2 border-b border-slate-800/80 pb-3.5">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold text-slate-200">{t.compareSection}</span>
+          <section className="flex flex-col gap-2 border-b-2 border-line pb-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-pixel text-[8px] text-ink">{t.compareSection}</span>
               <button
                 type="button"
                 onClick={onPinRefFrame}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded border border-slate-700 bg-[#07090E] text-[11px] text-cyan-300 hover:border-cyan-500 cursor-pointer"
+                className="px-btn px-btn-vt px-2 py-0.5"
               >
-                <Pin className="w-3 h-3" aria-hidden="true" />
+                <PixelPinIcon className="w-4 h-4" />
                 <span>{t.pinRefEpoch}</span>
               </button>
             </div>
 
             {refFrame ? (
-              <div className="text-[11px] font-mono tabular-nums text-slate-300 bg-[#07090E] border border-slate-800 rounded px-2 py-1.5">
-                {t.refEpochPinned} {refFrame.id} · B{refFrame.band} · λ={refFrame.wave_um.center.toFixed(3)} µm
+              <div className="text-[14px] font-mono tabular-nums text-ink bg-void px-notch-sm px-2.5 py-1 flex items-center gap-2 flex-wrap">
+                {refFrame.band >= 1 && refFrame.band <= 6 && (
+                  <span
+                    className={`w-[10px] h-[10px] inline-block shrink-0 border border-void ${BAND_SWATCH_CLASSES[refFrame.band]}`}
+                    aria-hidden="true"
+                  />
+                )}
+                <span>
+                  {t.refEpochPinned} {refFrame.id} · B{refFrame.band} · λ={refFrame.wave_um.center.toFixed(3)} µm
+                </span>
               </div>
             ) : (
-              <div className="text-[11px] text-slate-500">{t.noRefPinned}</div>
+              <div className="text-[14px] text-dim">{t.noRefPinned}</div>
             )}
 
-            <div className="grid grid-cols-3 gap-1 bg-[#07090E] p-1 rounded border border-slate-800">
+            <div className="grid grid-cols-3 gap-1.5 bg-void p-1.5 border-2 border-line">
               <button
                 type="button"
                 onClick={() => onCompareModeChange('single')}
-                className={`py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
-                  compareMode === 'single'
-                    ? 'bg-cyan-600 text-slate-950'
-                    : 'text-slate-300 hover:text-white'
+                className={`px-btn px-btn-vt py-1 ${
+                  compareMode === 'single' ? 'px-btn-active' : ''
                 }`}
               >
                 {t.modeSingle}
@@ -401,10 +443,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 type="button"
                 disabled={!refFrame}
                 onClick={() => onCompareModeChange('blink')}
-                className={`py-1 rounded text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                  compareMode === 'blink'
-                    ? 'bg-cyan-600 text-slate-950'
-                    : 'text-slate-300 hover:text-white'
+                className={`px-btn px-btn-vt py-1 ${
+                  compareMode === 'blink' ? 'px-btn-active' : ''
                 }`}
               >
                 {t.modeBlink}
@@ -413,10 +453,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 type="button"
                 disabled={!refFrame || diffBlocked}
                 onClick={() => onCompareModeChange('diff')}
-                className={`py-1 rounded text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                  compareMode === 'diff'
-                    ? 'bg-cyan-600 text-slate-950'
-                    : 'text-slate-300 hover:text-white'
+                className={`px-btn px-btn-vt py-1 ${
+                  compareMode === 'diff' ? 'px-btn-active' : ''
                 }`}
               >
                 {t.modeDiff}
@@ -424,30 +462,30 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             </div>
 
             {refFrame && deltaLambdaInfo && (
-              <div className="flex flex-col gap-1.5 text-[11px] font-mono tabular-nums">
-                <div className="flex justify-between text-slate-300">
+              <div className="flex flex-col gap-1.5 text-[14px] font-mono tabular-nums">
+                <div className="flex justify-between text-ink">
                   <span>{t.deltaLambdaLabel}:</span>
                   <span
                     className={
-                      deltaLambdaInfo.exceedsHalfChannel ? 'text-amber-400 font-semibold' : 'text-emerald-400'
+                      deltaLambdaInfo.exceedsHalfChannel ? 'text-warn font-semibold' : 'text-ok'
                     }
                   >
                     {deltaLambdaInfo.deltaUm.toFixed(4)} µm
                   </span>
                 </div>
-                <div className="flex justify-between text-slate-400">
+                <div className="flex justify-between text-dim">
                   <span>{t.halfChannelLabel}:</span>
                   <span>{deltaLambdaInfo.halfChannelWidthUm.toFixed(4)} µm</span>
                 </div>
                 {deltaLambdaInfo.exceedsHalfChannel && (
-                  <div className="bg-amber-950/40 border border-amber-700/70 rounded p-2 text-amber-200 font-sans leading-snug flex flex-col gap-1.5">
+                  <div className="bg-panel-hi border-2 border-warn p-2 text-warn font-sans leading-snug flex flex-col gap-1.5">
                     <span>▲ {t.deltaLambdaBlocked}</span>
-                    <label className="inline-flex items-center gap-1.5 text-[11px] text-amber-100 cursor-pointer">
+                    <label className="inline-flex items-center gap-2 text-[14px] text-ink cursor-pointer">
                       <input
                         type="checkbox"
                         checked={allowUnsafeDiff}
                         onChange={onToggleAllowUnsafeDiff}
-                        className="accent-amber-500"
+                        className="px-check"
                       />
                       <span>{t.confirmUnsafeDiff}</span>
                     </label>
@@ -459,56 +497,56 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 
           {/* Hover Pixel Inspector */}
           <section className="flex flex-col gap-2 pb-2">
-            <div className="flex items-center gap-1.5 font-semibold text-slate-200">
-              <Eye className="w-3.5 h-3.5 text-cyan-400" aria-hidden="true" />
+            <div className="flex items-center gap-2 font-pixel text-[8px] text-ink">
+              <PixelEyeIcon className="w-4 h-4 text-amber" />
               <span>{t.pixelInspectorTitle}</span>
             </div>
 
             {!hoveredPixel ? (
-              <p className="text-[11px] text-slate-500 leading-relaxed">{t.hoverPrompt}</p>
+              <p className="text-[14px] text-dim leading-snug">{t.hoverPrompt}</p>
             ) : (
-              <div className="bg-[#07090E] border border-slate-800 rounded p-2.5 flex flex-col gap-1.5 font-mono tabular-nums text-[11px]">
+              <div className="bg-void px-notch-sm p-2.5 flex flex-col gap-1.5 font-mono tabular-nums text-[14px]">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Pixel (x, y)</span>
-                  <span className="text-slate-100">
+                  <span className="text-dim">{t.pixelCoordLabel}</span>
+                  <span className="text-ink">
                     ({hoveredPixel.x}, {hoveredPixel.y})
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Flux</span>
-                  <span className="text-cyan-300 font-semibold">
+                  <span className="text-dim">{t.fluxLabel}</span>
+                  <span className="text-amber font-semibold">
                     {Number.isFinite(hoveredPixel.flux)
                       ? `${hoveredPixel.flux.toFixed(4)} MJy/sr`
                       : 'NaN'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">{t.linearWcsApprox}</span>
-                  <span className="text-slate-200">
+                  <span className="text-dim">{t.linearWcsApprox}</span>
+                  <span className="text-ink">
                     {hoveredPixel.ra.toFixed(5)}°, {hoveredPixel.dec >= 0 ? '+' : ''}
                     {hoveredPixel.dec.toFixed(5)}°
                   </span>
                 </div>
 
-                <div className="pt-1 border-t border-slate-800/80 font-sans">
-                  <div className="text-slate-400 mb-1">{t.activeFlagsPixel}</div>
+                <div className="pt-1.5 border-t-2 border-line font-sans">
+                  <div className="text-dim mb-1">{t.activeFlagsPixel}</div>
                   {hoveredPixel.flags.length === 0 ? (
-                    <span className="text-slate-500">{t.noFlagsPixel}</span>
+                    <span className="text-dim">{t.noFlagsPixel}</span>
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
                       {hoveredPixel.flags.map((fl) => {
                         const cls =
                           fl.category === 'saturation'
-                            ? 'text-rose-300 bg-rose-950/60 border-rose-700'
+                            ? 'text-bad border-bad bg-panel'
                             : fl.category === 'persistence'
-                            ? 'text-amber-300 bg-amber-950/60 border-amber-700'
+                            ? 'text-warn border-warn bg-panel'
                             : fl.category === 'bad'
-                            ? 'text-fuchsia-300 bg-fuchsia-950/50 border-fuchsia-700'
-                            : 'text-cyan-300 bg-cyan-950/50 border-cyan-800';
+                            ? 'text-ink/80 border-dim bg-panel'
+                            : 'text-b1 border-b1 bg-panel';
                         return (
                           <span
                             key={fl.name}
-                            className={`px-1.5 py-0.5 rounded border font-mono text-[10px] ${cls}`}
+                            className={`px-chip ${cls}`}
                           >
                             {fl.category === 'saturation' && `${t.saturationTag}: `}
                             {fl.category === 'persistence' && `${t.persistenceTag}: `}
