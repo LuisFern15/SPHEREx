@@ -203,3 +203,43 @@ export function propagatePosition(
 export function getDefaultTarget(): TargetPreset {
   return TARGET_PRESETS.find((t) => t.id === DEFAULT_TARGET_ID) ?? TARGET_PRESETS[0];
 }
+
+/** Resume cuántos cuadros cargados hay por colección, por ejemplo "DR1 150 · QR3 60". */
+export function formatLoadedFramesByCollection(
+  frames: readonly { collection?: string }[]
+): string | null {
+  const counts = new Map<string, number>();
+  for (const frame of frames) {
+    const raw = frame.collection?.trim();
+    if (!raw) continue;
+    const lower = raw.toLowerCase();
+    const key =
+      lower === 'spherex_dr1' || lower === 'dr1'
+        ? 'spherex_dr1'
+        : lower === 'spherex_qr3' || lower === 'qr3'
+        ? 'spherex_qr3'
+        : raw;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  if (counts.size === 0) return null;
+
+  const orderedKeys: string[] = [];
+  for (const col of AVAILABLE_COLLECTIONS) {
+    if (col !== 'spherex_both' && counts.has(col)) {
+      orderedKeys.push(col);
+    }
+  }
+  for (const key of counts.keys()) {
+    if (!orderedKeys.includes(key)) {
+      orderedKeys.push(key);
+    }
+  }
+
+  return orderedKeys
+    .map((key) => {
+      const label = key === 'spherex_dr1' ? 'DR1' : key === 'spherex_qr3' ? 'QR3' : key;
+      return `${label} ${counts.get(key)}`;
+    })
+    .join(' · ');
+}

@@ -476,6 +476,8 @@ export default function App() {
         emptyMessage={queryResult.emptyMessage}
         notes={queryResult.notes}
         onRetry={() => setRetryNonce((n) => n + 1)}
+        requestedSize={urlState.size}
+        actualSize={queryResult.query.size_arcsec}
       />
 
       <main className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
@@ -565,6 +567,10 @@ export default function App() {
           hoveredPixel={hoveredPixel}
           selectedFrameId={selectedFrameId}
           onSelectFrameId={handleSelectFrameById}
+          ra={urlState.ra}
+          dec={urlState.dec}
+          sizeArcsec={urlState.size}
+          frames={queryResult.frames}
         />
       </main>
 

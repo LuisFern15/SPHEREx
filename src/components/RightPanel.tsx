@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { Eye, Layers, Pin, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
-import { collectionsForTarget, formatIrsaCoverage } from '../data/targets';
+import {
+  collectionsForTarget,
+  formatIrsaCoverage,
+  formatLoadedFramesByCollection,
+} from '../data/targets';
 import { TranslationStrings } from '../i18n/translations';
 import { getColormapPreviewGradient } from '../rendering/colormaps';
 import {
@@ -12,6 +16,7 @@ import {
 } from '../types/spherex';
 import { HoveredPixelInfo } from './CutoutViewport';
 import { LightCurvePanel } from './LightCurvePanel';
+import { SkyMapPanel } from './SkyMapPanel';
 
 interface RightPanelProps {
   t: TranslationStrings;
@@ -52,6 +57,10 @@ interface RightPanelProps {
   hoveredPixel: HoveredPixelInfo | null;
   selectedFrameId?: string | null;
   onSelectFrameId?: (frameId: string) => void;
+  ra: number;
+  dec: number;
+  sizeArcsec: number;
+  frames: readonly { collection?: string }[];
 }
 
 const COLORMAPS: { id: ColormapName; labelEs: string; labelEn: string }[] = [
@@ -97,6 +106,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   hoveredPixel,
   selectedFrameId,
   onSelectFrameId,
+  ra,
+  dec,
+  sizeArcsec,
+  frames,
 }) => {
   const [activeTab, setActiveTab] = useState<'calibration' | 'spectrum' | 'assistant'>('calibration');
 
@@ -105,6 +118,12 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 
   const diffBlocked = Boolean(deltaLambdaInfo?.exceedsHalfChannel && !allowUnsafeDiff);
   const availableCollections = collectionsForTarget(activeTarget, collection);
+  const loadedFramesSummary = formatLoadedFramesByCollection(frames);
+  const targetName = activeTarget
+    ? lang === 'es'
+      ? activeTarget.nameEs
+      : activeTarget.nameEn
+    : null;
 
   return (
     <aside className="w-full lg:w-[340px] bg-[#0B0F17] border-t lg:border-t-0 lg:border-l border-slate-800 flex flex-col shrink-0 overflow-hidden">
@@ -167,6 +186,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-4 text-xs">
+          <SkyMapPanel t={t} ra={ra} dec={dec} targetName={targetName} sizeArcsec={sizeArcsec} />
+
           {/* IRSA Collection Selector & Verified Coverage */}
           <section className="flex flex-col gap-2 border-b border-slate-800/80 pb-3.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -194,6 +215,12 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 <span className="text-slate-200">
                   {formatIrsaCoverage(activeTarget, availableCollections, t)}
                 </span>
+              </div>
+            )}
+            {loadedFramesSummary && (
+              <div className="flex items-center justify-between gap-2 text-[11px] font-mono tabular-nums text-slate-400 bg-[#07090E] border border-slate-800/80 rounded px-2.5 py-1">
+                <span>{t.framesLoadedLabel}</span>
+                <span className="text-slate-200">{loadedFramesSummary}</span>
               </div>
             )}
           </section>

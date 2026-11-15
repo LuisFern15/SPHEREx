@@ -12,6 +12,8 @@ interface ProvenanceBannerProps {
   emptyMessage?: string;
   notes: string[];
   onRetry: () => void;
+  requestedSize?: number;
+  actualSize?: number;
 }
 
 export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
@@ -23,6 +25,8 @@ export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
   emptyMessage,
   notes,
   onRetry,
+  requestedSize,
+  actualSize,
 }) => {
   let glyph = '●';
   let label = t.provenanceLive;
@@ -56,6 +60,14 @@ export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
     badgeCls = 'text-amber-300';
   }
 
+  // Stored snapshots have a fixed field: tell the user when the requested size does not apply.
+  const showSizeMismatchNote =
+    !loading &&
+    provenance === 'cached' &&
+    requestedSize !== undefined &&
+    actualSize !== undefined &&
+    Math.abs(requestedSize - actualSize) > 1;
+
   return (
     <div
       className={`border-b px-4 py-1.5 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0 ${containerCls}`}
@@ -71,6 +83,16 @@ export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
         <span className="truncate">
           {loading ? (isLiveQuery ? t.queryingLiveIrsa : t.queryingBackend) : description}
         </span>
+        {showSizeMismatchNote && actualSize !== undefined && (
+          <>
+            <span className="text-slate-500" aria-hidden="true">
+              ·
+            </span>
+            <span className="text-slate-300 whitespace-nowrap">
+              {t.cachedSizeMismatchNote.replace('{n}', String(Math.round(actualSize)))}
+            </span>
+          </>
+        )}
         {!loading && notes.length > 0 && (
           <>
             <span className="text-slate-500" aria-hidden="true">

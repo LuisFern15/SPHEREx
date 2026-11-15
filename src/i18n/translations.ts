@@ -20,6 +20,16 @@ export interface TranslationStrings {
   provenanceSimulatedDesc: string;
   queryingBackend: string;
   queryingLiveIrsa: string;
+  cachedSizeMismatchNote: string;
+  framesLoadedLabel: string;
+  skyPanelTitle: string;
+  skyZoomTarget: string;
+  skySphereView: string;
+  skyOpenIrsa: string;
+  skyLoading: string;
+  skyLoadError: string;
+  skyCustomTarget: string;
+  skyTargetMarkerNote: string;
   loadingData: string;
   retryButton: string;
   devSimToggle: string;
@@ -116,6 +126,16 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     provenanceSimulatedDesc: 'Modo de desarrollo activo: datos sintéticos (no son observaciones reales).',
     queryingBackend: 'Consultando datos SPHEREx…',
     queryingLiveIrsa: 'Consultando IRSA en vivo… puede tardar hasta un minuto',
+    cachedSizeMismatchNote: 'Datos guardados de {n}″: el campo no cambia',
+    framesLoadedLabel: 'Cuadros cargados',
+    skyPanelTitle: 'Cielo (IRSA)',
+    skyZoomTarget: 'Acercar al objetivo',
+    skySphereView: 'Vista de esfera',
+    skyOpenIrsa: 'Abrir en IRSA',
+    skyLoading: 'Cargando visor del cielo…',
+    skyLoadError: 'No se pudo cargar el visor del cielo de IRSA',
+    skyCustomTarget: 'Coordenadas',
+    skyTargetMarkerNote: 'Punto verde: posición del objeto · círculo: campo del recorte',
     loadingData: 'Cargando datos…',
     retryButton: 'Reintentar',
     devSimToggle: 'Simulador (dev)',
@@ -213,6 +233,16 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     provenanceSimulatedDesc: 'Developer simulation mode active: synthetic data (not real observations).',
     queryingBackend: 'Querying SPHEREx data…',
     queryingLiveIrsa: 'Querying IRSA live… this can take up to a minute',
+    cachedSizeMismatchNote: 'Stored data of {n}″: field size does not change',
+    framesLoadedLabel: 'Frames loaded',
+    skyPanelTitle: 'Sky (IRSA)',
+    skyZoomTarget: 'Zoom to target',
+    skySphereView: 'Sphere view',
+    skyOpenIrsa: 'Open in IRSA',
+    skyLoading: 'Loading sky viewer…',
+    skyLoadError: 'Could not load the IRSA sky viewer',
+    skyCustomTarget: 'Coordinates',
+    skyTargetMarkerNote: 'Green dot: target position · circle: cutout field',
     loadingData: 'Loading data…',
     retryButton: 'Retry',
     devSimToggle: 'Simulator (dev)',
