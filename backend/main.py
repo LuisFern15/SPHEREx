@@ -1,5 +1,7 @@
 import base64
-from datetime import datetime, timezone
+import json
+import logging
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -14,7 +16,9 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-app = FastAPI(title="SPHEREx Visor API", version="0.2.1")
+logger = logging.getLogger("spherex")
+
+app = FastAPI(title="SPHEREx Visor API", version="0.2.2")
 
 app.add_middleware(GZipMiddleware, minimum_size=1024)
 app.add_middleware(
@@ -22,6 +26,9 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        # `npm run dev` usa el puerto 3000 (package.json).
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
         "https://spherex.nls9.workers.dev",
     ],
     allow_credentials=False,
@@ -31,7 +38,13 @@ app.add_middleware(
 
 DATA_DIR = Path(__file__).parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
+# La ruta de FITS locales (backend/data/) recorta cada archivo con su propia cuadrícula, sin reproyectar ni
+# propagar el movimiento propio: solo es útil para depurar. Está apagada salvo que se pida con SPHEREX_FITS_LOCAL=1.
+FITS_LOCAL_ACTIVO = os.environ.get("SPHEREX_FITS_LOCAL", "") == "1"
+SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
 PIXEL_SCALE_ARCSEC = 6.15
+# Distancia máxima entre la posición pedida y el centro de un snapshot para usarlo.
+SNAPSHOT_MATCH_ARCSEC = 120.0
 
 # Tabla 9 del suplemento oficial SPHEREx v1.0
 DEFAULT_FLAG_BITS = {
@@ -58,11 +71,12 @@ def encode_array_b64(arr: np.ndarray, dtype: str) -> str:
 
 
 def mjd_to_iso_date(mjd: float) -> str:
+    """Fecha ISO de un MJD; cadena vacía si no es válido (nunca se inventa la fecha de hoy)."""
     try:
-        t = Time(mjd, format="mjd", scale="utc")
-        return t.isot[:10]
-    except Exception:
-        return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        return Time(mjd, format="mjd", scale="utc").isot[:10]
+    except ValueError as error:
+        logger.warning("MJD inválido (%s): %s", mjd, error)
+        return ""
 
 
 def extract_cutout_from_fits(
@@ -98,10 +112,19 @@ def extract_cutout_from_fits(
         else:
             flags_cut = np.zeros(cutout.data.shape, dtype=np.uint32)
 
+        # Los números de bit vienen de la cabecera real (MSKN*), no de una tabla escrita a mano.
+        bits = {}
+        if "FLAGS" in hdul:
+            for clave, valor in hdul["FLAGS"].header.items():
+                if clave.startswith("MSKN"):
+                    bits[str(valor).strip()] = int(clave[4:])
+
         q_x, q_y = cutout.wcs.world_to_pixel(coord)
-        mjd = float(header.get("MJD-OBS", header.get("MJD", 60900.5)))
+        # MJD-AVG es el instante medio de la exposición en los FITS de SPHEREx.
+        mjd = float(header.get("MJD-AVG", header.get("MJD-OBS", header.get("MJD", 60900.5))))
         date_str = str(header.get("DATE-OBS", mjd_to_iso_date(mjd)))[:10]
-        band = int(header.get("BAND", 1))
+        # Los FITS de SPHEREx no traen BAND: la banda es el número de detector (1 a 6).
+        band = int(header.get("BAND", header.get("DETECTOR", 1)))
         detector = int(header.get("DETECTOR", band))
 
         wave_center = float(header.get("WAVELEN", header.get("WAVE", 1.0)))
@@ -126,7 +149,8 @@ def extract_cutout_from_fits(
             "data": encode_array_b64(cutout.data, "<f4"),
             "flags": encode_array_b64(flags_cut, "<u4"),
             "query_xy": [float(q_x), float(q_y)],
-            "predicted_xy": [float(q_x), float(q_y)],
+            # Sin predicted_xy: este camino no propaga el movimiento propio; el cliente lo calcula desde el objetivo.
+            "flag_bits": bits,
             "wcs": {
                 "crval": [float(cutout.wcs.wcs.crval[0]), float(cutout.wcs.wcs.crval[1])],
                 "crpix": [float(cutout.wcs.wcs.crpix[0]), float(cutout.wcs.wcs.crpix[1])],
@@ -138,10 +162,93 @@ def extract_cutout_from_fits(
         }
 
 
+# Caché en memoria: ruta -> (fecha de modificación, entrada del índice). Evita releer ~0.7 MB por archivo en cada petición.
+_CACHE_SNAPSHOTS: dict[Path, tuple[float, dict]] = {}
+
+
+def load_snapshots() -> list[dict]:
+    """Índice de los JSON generados por generar_snapshots.py (datos reales de IRSA ya verificados)."""
+    index = []
+    for path in sorted(SNAPSHOT_DIR.glob("*.json")):
+        try:
+            modificado = path.stat().st_mtime
+            en_cache = _CACHE_SNAPSHOTS.get(path)
+            if en_cache and en_cache[0] == modificado:
+                index.append(en_cache[1])
+                continue
+            with path.open(encoding="utf-8") as fh:
+                data = json.load(fh)
+            q = data["query"]
+            entrada = {
+                "path": path,
+                "collection": q["collection"],
+                "ra": float(q["ra"]),
+                "dec": float(q["dec"]),
+                "target": data.get("target", {}).get("id", path.stem),
+                "data": data,
+            }
+            _CACHE_SNAPSHOTS[path] = (modificado, entrada)
+            index.append(entrada)
+        except (OSError, KeyError, ValueError) as error:
+            logger.warning("Snapshot ignorado (%s): %s", path.name, error)
+    return index
+
+
+def find_snapshots(ra: float, dec: float, collection: str) -> list[dict]:
+    """Snapshots cercanos a la posición pedida; 'spherex_both' o 'both' junta DR1 y QR3."""
+    wanted = None if collection in ("both", "spherex_both") else {collection}
+    pedido = SkyCoord(ra=ra * u.deg, dec=dec * u.deg, frame="icrs")
+    found = []
+    for snap in load_snapshots():
+        if wanted is not None and snap["collection"] not in wanted:
+            continue
+        centro = SkyCoord(ra=snap["ra"] * u.deg, dec=snap["dec"] * u.deg, frame="icrs")
+        if pedido.separation(centro).arcsec <= SNAPSHOT_MATCH_ARCSEC:
+            found.append(snap)
+    return found
+
+
+def snapshot_response(snaps: list[dict], ra: float, dec: float, size: float, collection: str) -> dict:
+    frames, flag_bits, notes = [], {}, []
+    for snap in snaps:
+        data = snap["data"]
+        frames.extend(data["frames"])
+        flag_bits.update(data.get("flag_bits", {}))
+        notes.extend(data.get("notes", []))
+        notes.append(f"Archivo {snap['path'].name}, generado el {data.get('generated_at', '?')}.")
+    frames.sort(key=lambda f: f["mjd"])
+    if len(snaps) > 1:
+        # La franja de procedencia muestra la primera nota: que nombre todas las colecciones juntadas.
+        colecciones = " + ".join(sorted(s["collection"] for s in snaps))
+        fecha = max(s["data"].get("generated_at", "") for s in snaps)[:10]
+        notes.insert(0, f"Datos reales de IRSA ({colecciones}) guardados el {fecha}; no se actualizan solos.")
+    stored_size = snaps[0]["data"]["query"].get("size_arcsec", size)
+    if abs(stored_size - size) > 1:
+        notes.append(f"El recorte guardado es de {stored_size:.0f}″; el tamaño pedido ({size:.0f}″) no cambia los datos guardados.")
+    return {
+        "query": {"ra": ra, "dec": dec, "size_arcsec": stored_size, "collection": collection},
+        "pixel_scale_arcsec": PIXEL_SCALE_ARCSEC,
+        "provenance": "cached",
+        "cached": True,
+        "flag_bits": dict(sorted(flag_bits.items(), key=lambda kv: kv[1])),
+        "usingDefaultFlagBits": False,
+        "target": snaps[0]["data"].get("target"),
+        "generated_at": max(s["data"].get("generated_at", "") for s in snaps),
+        "catalog_sources": [],
+        "frames": frames,
+        "notes": notes,
+    }
+
+
 @app.get("/api/health")
 def health():
     fits_files = list(DATA_DIR.glob("*.fits")) + list(DATA_DIR.glob("*.fits.gz"))
-    return {"status": "ok", "cached_fits": len(fits_files)}
+    snaps = load_snapshots()
+    return {
+        "status": "ok",
+        "cached_fits": len(fits_files),
+        "snapshots": [f"{s['target']}:{s['collection']}" for s in snaps],
+    }
 
 
 @app.get("/api/frames")
@@ -149,20 +256,45 @@ def get_frames(
     ra: float = Query(..., ge=0.0, le=360.0),
     dec: float = Query(..., ge=-90.0, le=90.0),
     size: float = Query(180.0, ge=30.0, le=300.0),
-    band: Optional[int] = Query(None, ge=1, le=6),
+    band: Optional[int] = Query(None, ge=0, le=6),
     collection: str = Query("spherex_qr3"),
 ):
+    # 1) Datos reales ya verificados (snapshots) si la posición coincide con un objetivo guardado.
+    snaps = find_snapshots(ra, dec, collection)
+    if snaps:
+        response = snapshot_response(snaps, ra, dec, size, collection)
+        if band:
+            response["frames"] = [f for f in response["frames"] if f["band"] == band]
+        return response
+
+    # 1b) La posición sí tiene datos guardados, pero en otra colección: decirlo en vez de un error genérico.
+    otras = find_snapshots(ra, dec, "both")
+    if otras and not (FITS_LOCAL_ACTIVO and list(DATA_DIR.glob("*.fits*"))):
+        disponibles = sorted({s["collection"] for s in otras})
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"Sin datos guardados en {collection} para esta posición; "
+                f"hay datos en: {', '.join(disponibles)}."
+            ),
+        )
+
+    # 2) Recortes de FITS locales en backend/data/ (solo depuración, ver FITS_LOCAL_ACTIVO).
     frames = []
-    for fits_file in sorted(DATA_DIR.glob("*.fits*")):
+    for fits_file in sorted(DATA_DIR.glob("*.fits*")) if FITS_LOCAL_ACTIVO else []:
         try:
             frame = extract_cutout_from_fits(fits_file, ra, dec, size)
             if band is None or band == 0 or frame["band"] == band:
                 frames.append(frame)
-        except Exception:
-            continue
+        except (OSError, KeyError, ValueError) as error:
+            logger.warning("FITS local ignorado (%s): %s", fits_file.name, error)
 
     if frames:
         frames.sort(key=lambda f: f["mjd"])
+        # Los bits salen de la cabecera de cada FITS; la tabla escrita a mano solo es el respaldo si no hay ninguno.
+        bits_cabecera: dict[str, int] = {}
+        for frame in frames:
+            bits_cabecera.update(frame.pop("flag_bits", {}))
         return {
             "query": {
                 "ra": ra,
@@ -173,19 +305,19 @@ def get_frames(
             "pixel_scale_arcsec": PIXEL_SCALE_ARCSEC,
             "provenance": "cached",
             "cached": True,
-            "flag_bits": DEFAULT_FLAG_BITS,
-            "usingDefaultFlagBits": True,
+            "flag_bits": bits_cabecera or DEFAULT_FLAG_BITS,
+            "usingDefaultFlagBits": not bits_cabecera,
             "catalog_sources": [],
             "frames": frames,
             "notes": [
-                "Plan B activo (D10): recortes reales servidos desde caché local backend/data/."
+                "Modo de depuración: recortes de FITS locales (backend/data/), sin reproyección común ni propagación del movimiento propio."
             ],
         }
 
     raise HTTPException(
         status_code=503,
         detail=(
-            "Backend operativo en http://127.0.0.1:8000, pero backend/data/ aún no tiene "
-            "recortes .fits reales. Coloca recortes en backend/data/ o usa #sim=1."
+            "Backend operativo, pero no hay datos guardados para esta posición. Los datos reales "
+            "salen de backend/snapshots/ (se generan con generar_snapshots.py); #sim=1 es solo el simulador de desarrollo."
         ),
     )
