@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "match_arcsec": 120.0,
+  "snapshots": [
+    {
+      "file": "barnard_spherex_dr1.json",
+      "target": "barnard",
+      "collection": "spherex_dr1",
+      "ra": 269.4460721,
+      "dec": 4.7707319,
+      "size_arcsec": 200.0,
+      "generated_at": "2026-11-15T16:09:43+00:00",
+      "frames": 150
+    },
+    {
+      "file": "barnard_spherex_qr3.json",
+      "target": "barnard",
+      "collection": "spherex_qr3",
+      "ra": 269.4460721,
+      "dec": 4.7707318,
+      "size_arcsec": 200.0,
+      "generated_at": "2026-11-15T00:49:25+00:00",
+      "frames": 60
+    },
+    {
+      "file": "epsindib_spherex_dr1.json",
+      "target": "epsindib",
+      "collection": "spherex_dr1",
+      "ra": 331.098413,
+      "dec": -56.8012592,
+      "size_arcsec": 200.0,
+      "generated_at": "2026-11-15T16:07:20+00:00",
+      "frames": 149
+    },
+    {
+      "file": "epsindib_spherex_qr3.json",
+      "target": "epsindib",
+      "collection": "spherex_qr3",
+      "ra": 331.098413,
+      "dec": -56.8012592,
+      "size_arcsec": 200.0,
+      "generated_at": "2026-11-15T02:09:57+00:00",
+      "frames": 60
+    },
+    {
+      "file": "rdra_spherex_dr1.json",
+      "target": "rdra",
+      "collection": "spherex_dr1",
+      "ra": 248.1672204,
+      "dec": 66.7550253,
+      "size_arcsec": 200.0,
+      "generated_at": "2026-11-15T16:07:07+00:00",
+      "frames": 148
+    },
+    {
+      "file": "rdra_spherex_qr3.json",
+      "target": "rdra",
+      "collection": "spherex_qr3",
+      "ra": 248.1672204,
+      "dec": 66.7550253,
+      "size_arcsec": 200.0,
+      "generated_at": "2026-11-15T02:04:30+00:00",
+      "frames": 60
+    },
+    {
+      "file": "rwaur_spherex_dr1.json",
+      "target": "rwaur",
+      "collection": "spherex_dr1",
+      "ra": 76.9563259,
+      "dec": 30.4011819,
+      "size_arcsec": 200.0,
+      "generated_at": "2026-11-15T16:08:32+00:00",
+      "frames": 149
+    },
+    {
+      "file": "rwaur_spherex_qr3.json",
+      "target": "rwaur",
+      "collection": "spherex_qr3",
+      "ra": 76.9563259,
+      "dec": 30.4011819,
+      "size_arcsec": 200.0,
+      "generated_at": "2026-11-15T02:14:12+00:00",
+      "frames": 60
+    },
+    {
+      "file": "wise0855_spherex_dr1.json",
+      "target": "wise0855",
+      "collection": "spherex_dr1",
+      "ra": 133.7577808,
+      "dec": -7.2420239,
+      "size_arcsec": 200.0,
+      "generated_at": "2026-11-15T07:36:23+00:00",
+      "frames": 100
+    }
+  ],
+  "photometry": {
+    "barnard": [
+      "barnard_spherex_dr1.json",
+      "barnard_spherex_qr3.json"
+    ],
+    "epsindib": [
+      "epsindib_spherex_dr1.json",
+      "epsindib_spherex_qr3.json"
+    ],
+    "rdra": [
+      "rdra_spherex_dr1.json",
+      "rdra_spherex_qr3.json"
+    ],
+    "rwaur": [
+      "rwaur_spherex_dr1.json",
+      "rwaur_spherex_qr3.json"
+    ],
+    "wise0855": [
+      "wise0855_spherex_dr1.json"
+    ]
+  }
+}

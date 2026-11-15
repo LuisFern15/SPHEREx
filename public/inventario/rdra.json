@@ -1,0 +1,74 @@
+{
+  "target": "rdra",
+  "total_images": 2497,
+  "collections": {
+    "spherex_dr1": {
+      "collection": "spherex_dr1",
+      "images": 417,
+      "date_range": {
+        "start": "2025-05-16",
+        "end": "2026-05-13"
+      },
+      "visits": 19,
+      "by_band": {
+        "1": 68,
+        "2": 71,
+        "3": 71,
+        "4": 65,
+        "5": 72,
+        "6": 70
+      }
+    },
+    "spherex_dr1_deep": {
+      "collection": "spherex_dr1_deep",
+      "images": 1225,
+      "date_range": {
+        "start": "2025-04-24",
+        "end": "2026-05-06"
+      },
+      "visits": 13,
+      "by_band": {
+        "1": 130,
+        "2": 0,
+        "3": 483,
+        "4": 130,
+        "5": 0,
+        "6": 482
+      }
+    },
+    "spherex_qr3": {
+      "collection": "spherex_qr3",
+      "images": 126,
+      "date_range": {
+        "start": "2026-05-16",
+        "end": "2026-07-16"
+      },
+      "visits": 6,
+      "by_band": {
+        "1": 24,
+        "2": 19,
+        "3": 20,
+        "4": 23,
+        "5": 19,
+        "6": 21
+      }
+    },
+    "spherex_qr3_deep": {
+      "collection": "spherex_qr3_deep",
+      "images": 729,
+      "date_range": {
+        "start": "2026-07-10",
+        "end": "2026-09-27"
+      },
+      "visits": 6,
+      "by_band": {
+        "1": 363,
+        "2": 0,
+        "3": 0,
+        "4": 366,
+        "5": 0,
+        "6": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "target": "wise0855",
+  "total_images": 258,
+  "collections": {
+    "spherex_dr1": {
+      "collection": "spherex_dr1",
+      "images": 258,
+      "date_range": {
+        "start": "2025-05-05",
+        "end": "2026-05-14"
+      },
+      "visits": 8,
+      "by_band": {
+        "1": 36,
+        "2": 48,
+        "3": 45,
+        "4": 36,
+        "5": 48,
+        "6": 45
+      }
+    },
+    "spherex_qr3": {
+      "collection": "spherex_qr3",
+      "images": 0,
+      "date_range": {
+        "start": null,
+        "end": null
+      },
+      "visits": 0,
+      "by_band": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0,
+        "6": 0
+      }
+    }
+  }
+}
