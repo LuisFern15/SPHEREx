@@ -4,6 +4,7 @@ import {
   DecodedSpherexFrame,
   FlagBitsMap,
   FramesQueryResult,
+  PhotometryResponse,
   RawSpherexFrame,
 } from '../types/spherex';
 import { decodeBase64Float32LE, decodeBase64Uint32LE } from '../utils/binaryDecode';
@@ -50,22 +51,64 @@ export async function fetchFrames(params: {
   size: number;
   simMode: boolean;
   collection?: string;
+  live?: boolean;
+  maxFrames?: number;
+  pmra?: number;
+  pmdec?: number;
+  epoch?: string;
   signal?: AbortSignal;
 }): Promise<FramesQueryResult> {
-  const { ra, dec, size, simMode, collection = 'spherex_qr3', signal } = params;
+  const {
+    ra,
+    dec,
+    size,
+    simMode,
+    collection = 'spherex_qr3',
+    live = true,
+    maxFrames,
+    pmra,
+    pmdec,
+    epoch,
+    signal,
+  } = params;
 
   if (simMode) {
     return generateSimulatedCutouts(ra, dec, size, collection);
   }
 
-  const url = `${API_BASE}/api/frames?ra=${encodeURIComponent(ra.toFixed(6))}&dec=${encodeURIComponent(
-    dec.toFixed(6)
-  )}&size=${encodeURIComponent(size)}&collection=${encodeURIComponent(collection)}`;
+  const searchParams = new URLSearchParams({
+    ra: ra.toFixed(6),
+    dec: dec.toFixed(6),
+    size: String(size),
+    collection,
+    live: live ? 'true' : 'false',
+  });
+  if (typeof maxFrames === 'number' && maxFrames > 0) {
+    searchParams.set('max_frames', String(Math.round(maxFrames)));
+  }
+  if (typeof pmra === 'number' && Number.isFinite(pmra) && pmra !== 0) {
+    searchParams.set('pmra', String(pmra));
+  }
+  if (typeof pmdec === 'number' && Number.isFinite(pmdec) && pmdec !== 0) {
+    searchParams.set('pmdec', String(pmdec));
+  }
+  if (epoch) {
+    searchParams.set('epoch', epoch);
+  }
 
+  const url = `${API_BASE}/api/frames?${searchParams.toString()}`;
+
+  const timeoutMs = live ? 60000 : 15000;
+  let timedOut = false;
   const timeoutController = new AbortController();
-  const timeoutId = window.setTimeout(() => timeoutController.abort(), 15000);
+  const timeoutId = window.setTimeout(() => {
+    timedOut = true;
+    timeoutController.abort();
+  }, timeoutMs);
+
+  const onExternalAbort = () => timeoutController.abort();
   if (signal) {
-    signal.addEventListener('abort', () => timeoutController.abort(), { once: true });
+    signal.addEventListener('abort', onExternalAbort, { once: true });
   }
 
   try {
@@ -121,12 +164,20 @@ export async function fetchFrames(params: {
       notes: raw.notes ?? [],
     };
   } catch (err) {
-    const message =
-      err instanceof Error
-        ? err.name === 'AbortError'
-          ? 'Timeout (15s) querying SPHEREx / IRSA backend.'
-          : err.message
-        : 'Unknown backend connection error.';
+    let message = 'Unknown backend connection error.';
+    if (err instanceof Error) {
+      if (err.name === 'AbortError') {
+        message = timedOut
+          ? `Timeout (${Math.round(timeoutMs / 1000)}s) querying SPHEREx / IRSA backend.`
+          : 'Request cancelled.';
+      } else if (err instanceof TypeError) {
+        message = API_BASE
+          ? `No se pudo conectar con el backend en ${API_BASE}. Verifica que uvicorn esté corriendo.`
+          : 'No se pudo conectar con el backend (/api/frames). Configura VITE_API_URL en .env.local.';
+      } else {
+        message = err.message;
+      }
+    }
 
     return {
       query: { ra, dec, size_arcsec: size, collection },
@@ -142,5 +193,92 @@ export async function fetchFrames(params: {
     };
   } finally {
     window.clearTimeout(timeoutId);
+    if (signal) {
+      signal.removeEventListener('abort', onExternalAbort);
+    }
+  }
+}
+
+async function fetchStaticPhotometryFile(
+  target: string,
+  collection: string,
+  signal?: AbortSignal
+): Promise<PhotometryResponse> {
+  const res = await fetch(
+    `/fotometria/${encodeURIComponent(target)}_${encodeURIComponent(collection)}.json`,
+    { signal }
+  );
+  if (!res.ok) {
+    throw new Error(`Sin fotometría estática para ${target} (${collection})`);
+  }
+  const contentType = res.headers.get('content-type') ?? '';
+  if (contentType.includes('text/html')) {
+    throw new Error(`Archivo estático no encontrado para ${target} (${collection})`);
+  }
+  const data: PhotometryResponse = await res.json();
+  return { ...data, provenance: 'static' };
+}
+
+export async function fetchPhotometry(params: {
+  target: string;
+  collection?: string;
+  signal?: AbortSignal;
+}): Promise<PhotometryResponse> {
+  const { target, collection = 'spherex_dr1', signal } = params;
+  const url = `${API_BASE}/api/photometry?target=${encodeURIComponent(
+    target
+  )}&collection=${encodeURIComponent(collection)}`;
+
+  try {
+    const res = await fetch(url, { signal });
+    const contentType = res.headers.get('content-type') ?? '';
+    if (!res.ok || contentType.includes('text/html')) {
+      let detail = `HTTP ${res.status}`;
+      if (res.status === 400 || res.status === 404) {
+        try {
+          const errBody = await res.json();
+          if (errBody?.detail) detail = String(errBody.detail);
+        } catch {
+          // ignore
+        }
+      }
+      throw new Error(detail);
+    }
+    const data: PhotometryResponse = await res.json();
+    return { ...data, provenance: 'cached' };
+  } catch (apiErr) {
+    if (signal?.aborted) throw apiErr;
+
+    if (collection === 'spherex_both' || collection === 'both') {
+      const [dr1Res, qr3Res] = await Promise.allSettled([
+        fetchStaticPhotometryFile(target, 'spherex_dr1', signal),
+        fetchStaticPhotometryFile(target, 'spherex_qr3', signal),
+      ]);
+      const disponibles = [dr1Res, qr3Res]
+        .filter((r): r is PromiseFulfilledResult<PhotometryResponse> => r.status === 'fulfilled')
+        .map((r) => r.value);
+
+      if (disponibles.length === 0) {
+        throw apiErr instanceof Error ? apiErr : new Error('Sin datos de fotometría disponibles.');
+      }
+      if (disponibles.length === 1) {
+        return { ...disponibles[0], collection: 'spherex_both' };
+      }
+      const measurements = disponibles
+        .flatMap((d) => d.measurements)
+        .sort((a, b) => (a.mjd ?? 0) - (b.mjd ?? 0));
+      return {
+        ...disponibles[0],
+        collection: 'spherex_both',
+        measurements,
+        notes: [
+          'Combinación estática de fotometría (DR1 + QR3) ordenada por MJD.',
+          ...disponibles[0].notes,
+        ],
+        provenance: 'static',
+      };
+    }
+
+    return fetchStaticPhotometryFile(target, collection, signal);
   }
 }

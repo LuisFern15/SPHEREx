@@ -11,6 +11,7 @@ import {
   TargetPreset,
 } from '../types/spherex';
 import { HoveredPixelInfo } from './CutoutViewport';
+import { LightCurvePanel } from './LightCurvePanel';
 
 interface RightPanelProps {
   t: TranslationStrings;
@@ -49,6 +50,8 @@ interface RightPanelProps {
   allowUnsafeDiff: boolean;
   onToggleAllowUnsafeDiff: () => void;
   hoveredPixel: HoveredPixelInfo | null;
+  selectedFrameId?: string | null;
+  onSelectFrameId?: (frameId: string) => void;
 }
 
 const COLORMAPS: { id: ColormapName; labelEs: string; labelEn: string }[] = [
@@ -92,6 +95,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   allowUnsafeDiff,
   onToggleAllowUnsafeDiff,
   hoveredPixel,
+  selectedFrameId,
+  onSelectFrameId,
 }) => {
   const [activeTab, setActiveTab] = useState<'calibration' | 'spectrum' | 'assistant'>('calibration');
 
@@ -102,7 +107,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 
   return (
     <aside className="w-full lg:w-[340px] bg-[#0B0F17] border-t lg:border-t-0 lg:border-l border-slate-800 flex flex-col shrink-0 overflow-hidden">
-      {/* Reserved Tabs: Calibración (Active) + Espectro (Capa 2) + Asistente (Capa 4) */}
+      {/* Tabs: Calibración + Espectro (Capa 2) + Asistente (Capa 4) */}
       <div className="grid grid-cols-3 border-b border-slate-800 bg-[#07090E] text-[11px] shrink-0">
         <button
           type="button"
@@ -118,11 +123,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('spectrum')}
-          title={t.futureLayerNote}
           className={`px-2 py-2.5 font-medium border-b-2 transition-colors truncate cursor-pointer ${
             activeTab === 'spectrum'
-              ? 'border-slate-500 text-slate-200 bg-[#0F141F]'
-              : 'border-transparent text-slate-500 hover:text-slate-300'
+              ? 'border-cyan-500 text-cyan-200 bg-[#0F141F]'
+              : 'border-transparent text-slate-300 hover:text-white'
           }`}
         >
           {t.tabSpectrumFuture}
@@ -141,11 +145,23 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </button>
       </div>
 
-      {activeTab !== 'calibration' ? (
+      {activeTab === 'spectrum' ? (
+        <div className="flex-1 overflow-y-auto p-3.5">
+          <LightCurvePanel
+            targetId={activeTarget?.id ?? null}
+            targetName={
+              activeTarget ? (lang === 'es' ? activeTarget.nameEs : activeTarget.nameEn) : undefined
+            }
+            collection={collection}
+            activeBand={band}
+            selectedFrameId={selectedFrameId}
+            onSelectFrameId={onSelectFrameId}
+            lang={lang}
+          />
+        </div>
+      ) : activeTab === 'assistant' ? (
         <div className="p-5 flex flex-col gap-2 text-xs text-slate-400">
-          <div className="font-semibold text-slate-200">
-            {activeTab === 'spectrum' ? t.tabSpectrumFuture : t.tabAssistantFuture}
-          </div>
+          <div className="font-semibold text-slate-200">{t.tabAssistantFuture}</div>
           <p className="leading-relaxed">{t.futureLayerNote}</p>
         </div>
       ) : (

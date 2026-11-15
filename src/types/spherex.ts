@@ -22,6 +22,8 @@ export interface WaveRangeUm {
 
 export interface RawSpherexFrame {
   id: string;
+  obs_id?: string;
+  collection?: string;
   mjd: number;
   date: string;
   epoch?: string | number;
@@ -35,6 +37,8 @@ export interface RawSpherexFrame {
   predicted_xy?: [number, number];
   target_xy?: [number, number];
   wcs: SpherexWcs;
+  valid_fraction?: number;
+  source_url?: string;
 }
 
 export interface DecodedSpherexFrame extends RawSpherexFrame {
@@ -134,4 +138,54 @@ export interface BandContrast {
   min: number;
   max: number;
   softening: number;
+}
+
+export type PhotometryMode = 'aperture' | 'halo';
+
+export interface PhotometryMeasurement {
+  id: string;
+  obs_id: string;
+  collection: string;
+  mjd: number;
+  date: string;
+  band: number;
+  wave_um: WaveRangeUm;
+  x: number;
+  y: number;
+  flux_ujy: number | null;
+  err_ujy: number | null;
+  snr: number | null;
+  bkg_mjysr: number | null;
+  bkg_source_contaminated: boolean;
+  halo_flux_ujy: number | null;
+  halo_err_ujy: number | null;
+  halo_valid: boolean;
+  aperture_px: number;
+  halo_px?: [number, number];
+  annulus_px?: [number, number];
+  n_bad: number;
+  lost_weight_fraction: number;
+  flags_or: number;
+  flag_names: string[];
+  valid: boolean;
+  reason: string;
+}
+
+export interface PhotometryResponse {
+  target: string;
+  collection: string;
+  generated_at: string;
+  method: string;
+  aperture_px: number;
+  halo_px: [number, number];
+  annulus_px: [number, number];
+  units: string;
+  center?: {
+    ra: number;
+    dec: number;
+    source?: string;
+  };
+  notes: string[];
+  measurements: PhotometryMeasurement[];
+  provenance?: 'live' | 'cached' | 'static';
 }

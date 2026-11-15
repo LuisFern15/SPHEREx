@@ -5,6 +5,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Optional
+from consulta_viva import consultar_irsa_en_vivo
 
 import numpy as np
 from astropy.coordinates import SkyCoord
@@ -44,6 +45,7 @@ DATA_DIR.mkdir(exist_ok=True)
 # La ruta de FITS locales (backend/data/) recorta cada archivo con su propia cuadrícula, sin reproyectar ni
 # propagar el movimiento propio: solo es útil para depurar. Está apagada salvo que se pida con SPHEREX_FITS_LOCAL=1.
 FITS_LOCAL_ACTIVO = os.environ.get("SPHEREX_FITS_LOCAL", "") == "1"
+LIVE_IRSA_DEFAULT = os.environ.get("SPHEREX_LIVE_IRSA", "0") == "1"
 SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
 FOTOMETRIA_DIR = Path(__file__).parent / "fotometria"
 INVENTARIO_DIR = Path(__file__).parent / "inventario"
@@ -509,6 +511,11 @@ def get_frames(
     size: float = Query(180.0, ge=30.0, le=300.0),
     band: Optional[int] = Query(None, ge=0, le=6),
     collection: str = Query("spherex_qr3"),
+    live: Optional[bool] = Query(None),
+    max_frames: int = Query(24, ge=1, le=150),
+    pmra: float = Query(0.0),
+    pmdec: float = Query(0.0),
+    epoch: str = Query("J2016.0"),
 ):
     clean_collection = validate_collection_param(collection)
 
@@ -544,7 +551,6 @@ def get_frames(
 
     if frames:
         frames.sort(key=lambda f: f["mjd"])
-        # Los bits salen de la cabecera de cada FITS; la tabla escrita a mano solo es el respaldo si no hay ninguno.
         bits_cabecera: dict[str, int] = {}
         for frame in frames:
             bits_cabecera.update(frame.pop("flag_bits", {}))
@@ -566,6 +572,24 @@ def get_frames(
                 "Modo de depuración: recortes de FITS locales (backend/data/), sin reproyección común ni propagación del movimiento propio."
             ],
         }
+
+    # 3) Consulta en vivo al SIA de IRSA para cualquier coordenada arbitraria (Capa 1).
+    usar_vivo = LIVE_IRSA_DEFAULT if live is None else live
+    if usar_vivo:
+        response = consultar_irsa_en_vivo(
+            ra=ra,
+            dec=dec,
+            size_arcsec=size,
+            collection=clean_collection,
+            max_frames=max_frames,
+            pmra=pmra,
+            pmdec=pmdec,
+            epoch=epoch,
+        )
+        if band:
+            response = dict(response)
+            response["frames"] = [f for f in response["frames"] if f["band"] == band]
+        return response
 
     raise HTTPException(
         status_code=404,

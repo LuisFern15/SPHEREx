@@ -201,6 +201,49 @@ export default function App() {
 
   const currentFrame = timelineFrames[safeIndex] ?? null;
 
+  const pendingFrameIdRef = useRef<string | null>(null);
+
+  const selectedFrameId = useMemo(
+    () => currentFrame?.sourceFrameIds?.[0] ?? currentFrame?.id ?? null,
+    [currentFrame]
+  );
+
+  const handleSelectFrameById = useCallback(
+    (frameId: string) => {
+      setPlaying(false);
+      const directIdx = timelineFrames.findIndex(
+        (f) => f.id === frameId || f.sourceFrameIds?.includes(frameId)
+      );
+      if (directIdx >= 0) {
+        setUrlState((prev) => ({ ...prev, i: directIdx }));
+        return;
+      }
+      const rawMatch = queryResult.frames.find((f) => f.id === frameId);
+      if (rawMatch) {
+        pendingFrameIdRef.current = frameId;
+        setCoaddMode(false);
+        setUrlState((prev) => ({
+          ...prev,
+          band: prev.band !== 0 && prev.band !== rawMatch.band ? rawMatch.band : prev.band,
+          i: 0,
+        }));
+      }
+    },
+    [timelineFrames, queryResult.frames]
+  );
+
+  useEffect(() => {
+    const targetId = pendingFrameIdRef.current;
+    if (!targetId) return;
+    const idx = timelineFrames.findIndex(
+      (f) => f.id === targetId || f.sourceFrameIds?.includes(targetId)
+    );
+    if (idx >= 0) {
+      pendingFrameIdRef.current = null;
+      setUrlState((prev) => ({ ...prev, i: idx }));
+    }
+  }, [timelineFrames]);
+
   useEffect(() => {
     if (timelineFrames.length > 0 && urlState.i >= timelineFrames.length) {
       setUrlState((prev) => ({ ...prev, i: 0 }));
@@ -494,6 +537,8 @@ export default function App() {
           allowUnsafeDiff={allowUnsafeDiff}
           onToggleAllowUnsafeDiff={() => setAllowUnsafeDiff((a) => !a)}
           hoveredPixel={hoveredPixel}
+          selectedFrameId={selectedFrameId}
+          onSelectFrameId={handleSelectFrameById}
         />
       </main>
 
