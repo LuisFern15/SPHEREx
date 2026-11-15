@@ -1,0 +1,8 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+# Regla del repositorio: nunca subir FITS completos de ~70 MB
+data/*.fits
+data/*.fits.gz
