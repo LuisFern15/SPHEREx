@@ -25,13 +25,12 @@ from astroquery.ipac.irsa import Irsa
 from pyvo.dal.exceptions import DALQueryError, DALServiceError
 
 from generar_snapshots import OBJETIVOS, coordenada_base
+from inventario_resumen import visitas
 
 warnings.simplefilter("ignore", category=AstropyWarning)
 
 SALIDA = Path(__file__).parent / "inventario"
 CACHE_RECORTES = Path(__file__).parent / "cache"
-# Dos imágenes separadas por más de este tiempo pertenecen a visitas distintas.
-SEPARACION_VISITAS_DIAS = 3.0
 # Tamaño medio de un recorte de 200″ bajado con el servicio de recortes (medido en backend/cache).
 MB_POR_RECORTE = 3.9
 COLUMNAS = ["obs_id", "banda", "mjd_inicio", "fecha", "exposicion_s", "lambda_min_um", "lambda_max_um",
@@ -94,27 +93,6 @@ def filas_de_tabla(tabla: Any) -> list[dict[str, Any]]:
     return filas
 
 
-def visitas(filas: list[dict[str, Any]]) -> list[tuple[str, str, int]]:
-    """
-    Agrupa las imágenes en visitas (rachas separadas por más de SEPARACION_VISITAS_DIAS)
-
-    Parameters
-    ----------
-    `filas`:list[dict[str, Any]] Filas ordenadas por fecha.
-
-    Returns
-    -------
-    `list[tuple[str, str, int]]` Fecha de inicio, fecha de fin y número de imágenes de cada visita.
-    """
-    grupos: list[list[dict[str, Any]]] = []
-    for f in filas:
-        if grupos and f["mjd_inicio"] - grupos[-1][-1]["mjd_inicio"] <= SEPARACION_VISITAS_DIAS:
-            grupos[-1].append(f)
-        else:
-            grupos.append([f])
-    return [(g[0]["fecha"][:10], g[-1]["fecha"][:10], len(g)) for g in grupos]
-
-
 def en_cache(filas: list[dict[str, Any]]) -> int:
     """
     Cuenta cuántas imágenes ya tienen un recorte bajado en backend/cache
@@ -175,7 +153,17 @@ def resumen_markdown(obj: str, coleccion: str, filas: list[dict[str, Any]]) -> s
 
 
 def main() -> None:
-    """Recorre objetivos y colecciones, guarda los CSV y el resumen."""
+    """
+    Recorre objetivos y colecciones, guarda los CSV y el resumen
+
+    Parameters
+    ----------
+    Ninguno.
+
+    Returns
+    -------
+    `None`
+    """
     p = argparse.ArgumentParser()
     p.add_argument("--colecciones", nargs="+", default=["spherex_dr1", "spherex_qr3"])
     a = p.parse_args()

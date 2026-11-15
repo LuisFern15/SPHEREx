@@ -16,9 +16,11 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
+from inventario_resumen import resumen_inventario_objetivo
+
 logger = logging.getLogger("spherex")
 
-app = FastAPI(title="SPHEREx Visor API", version="0.2.2")
+app = FastAPI(title="SPHEREx Visor API", version="0.3.0")
 
 app.add_middleware(GZipMiddleware, minimum_size=1024)
 app.add_middleware(
@@ -42,9 +44,21 @@ DATA_DIR.mkdir(exist_ok=True)
 # propagar el movimiento propio: solo es útil para depurar. Está apagada salvo que se pida con SPHEREX_FITS_LOCAL=1.
 FITS_LOCAL_ACTIVO = os.environ.get("SPHEREX_FITS_LOCAL", "") == "1"
 SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
+FOTOMETRIA_DIR = Path(__file__).parent / "fotometria"
+INVENTARIO_DIR = Path(__file__).parent / "inventario"
 PIXEL_SCALE_ARCSEC = 6.15
 # Distancia máxima entre la posición pedida y el centro de un snapshot para usarlo.
 SNAPSHOT_MATCH_ARCSEC = 120.0
+
+VALID_TARGETS: frozenset[str] = frozenset({"barnard", "epsindib", "wise0855", "rwaur", "rdra"})
+VALID_COLLECTIONS: frozenset[str] = frozenset({
+    "spherex_dr1",
+    "spherex_qr3",
+    "spherex_dr1_deep",
+    "spherex_qr3_deep",
+    "spherex_both",
+    "both",
+})
 
 # Tabla 9 del suplemento oficial SPHEREx v1.0
 DEFAULT_FLAG_BITS = {
@@ -162,8 +176,10 @@ def extract_cutout_from_fits(
         }
 
 
-# Caché en memoria: ruta -> (fecha de modificación, entrada del índice). Evita releer ~0.7 MB por archivo en cada petición.
+# Cachés en memoria por fecha de modificación (st_mtime).
 _CACHE_SNAPSHOTS: dict[Path, tuple[float, dict]] = {}
+_CACHE_FOTOMETRIA: dict[Path, tuple[float, dict]] = {}
+_CACHE_INVENTARIO: dict[str, tuple[tuple[tuple[str, float], ...], dict]] = {}
 
 
 def load_snapshots() -> list[dict]:
@@ -192,6 +208,51 @@ def load_snapshots() -> list[dict]:
         except (OSError, KeyError, ValueError) as error:
             logger.warning("Snapshot ignorado (%s): %s", path.name, error)
     return index
+
+
+def load_photometry_files() -> list[dict]:
+    """Índice de los JSON de fotometría generados por generar_fotometria.py con caché por st_mtime."""
+    if not FOTOMETRIA_DIR.exists():
+        return []
+    entries = []
+    for path in sorted(FOTOMETRIA_DIR.glob("*.json")):
+        try:
+            modificado = path.stat().st_mtime
+            en_cache = _CACHE_FOTOMETRIA.get(path)
+            if en_cache and en_cache[0] == modificado:
+                entries.append(en_cache[1])
+                continue
+            with path.open(encoding="utf-8") as fh:
+                data = json.load(fh)
+            entrada = {
+                "path": path,
+                "target": str(data.get("target", "")),
+                "collection": str(data.get("collection", "")),
+                "generated_at": str(data.get("generated_at", "")),
+                "data": data,
+            }
+            _CACHE_FOTOMETRIA[path] = (modificado, entrada)
+            entries.append(entrada)
+        except (OSError, KeyError, ValueError) as error:
+            logger.warning("Fotometría ignorada (%s): %s", path.name, error)
+    return entries
+
+
+def validate_photometry_params(target: str, collection: str) -> tuple[str, str]:
+    """Valida target y collection contra listas blancas estrictas antes de construir rutas."""
+    clean_target = target.strip()
+    clean_collection = collection.strip()
+    if clean_target not in VALID_TARGETS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Objetivo no permitido: '{target}'. Valores válidos: {', '.join(sorted(VALID_TARGETS))}.",
+        )
+    if clean_collection not in VALID_COLLECTIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Colección no permitida: '{collection}'. Valores válidos: {', '.join(sorted(VALID_COLLECTIONS))}.",
+        )
+    return clean_target, clean_collection
 
 
 def find_snapshots(ra: float, dec: float, collection: str) -> list[dict]:
@@ -249,6 +310,147 @@ def health():
         "cached_fits": len(fits_files),
         "snapshots": [f"{s['target']}:{s['collection']}" for s in snaps],
     }
+
+
+@app.get("/api/targets")
+def get_targets():
+    """Lista de objetivos con snapshots o fotometría guardados en disco."""
+    snaps = load_snapshots()
+    phots = load_photometry_files()
+
+    por_objetivo: dict[str, dict] = {}
+    for snap in snaps:
+        tid = snap["target"]
+        info = por_objetivo.setdefault(
+            tid,
+            {
+                "id": tid,
+                "snapshot_collections": [],
+                "frame_counts": {},
+                "photometry_collections": [],
+                "latest_generated_at": "",
+            },
+        )
+        col = snap["collection"]
+        if col not in info["snapshot_collections"]:
+            info["snapshot_collections"].append(col)
+        info["frame_counts"][col] = len(snap["data"].get("frames", []))
+        gen = str(snap["data"].get("generated_at", ""))
+        if gen > info["latest_generated_at"]:
+            info["latest_generated_at"] = gen
+
+    for phot in phots:
+        tid = phot["target"]
+        if not tid:
+            continue
+        info = por_objetivo.setdefault(
+            tid,
+            {
+                "id": tid,
+                "snapshot_collections": [],
+                "frame_counts": {},
+                "photometry_collections": [],
+                "latest_generated_at": "",
+            },
+        )
+        col = phot["collection"]
+        if col and col not in info["photometry_collections"]:
+            info["photometry_collections"].append(col)
+        gen = phot["generated_at"]
+        if gen > info["latest_generated_at"]:
+            info["latest_generated_at"] = gen
+
+    targets = []
+    for tid in sorted(por_objetivo):
+        item = por_objetivo[tid]
+        item["snapshot_collections"].sort()
+        item["photometry_collections"].sort()
+        targets.append(item)
+
+    return {"targets": targets}
+
+
+@app.get("/api/inventory")
+def get_inventory(target: str = Query(..., min_length=1)):
+    """Inventario CSV de IRSA para un objetivo validado contra la lista blanca."""
+    clean_target = target.strip()
+    if clean_target not in VALID_TARGETS:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Objetivo no reconocido: '{target}'. Objetivos disponibles: {', '.join(sorted(VALID_TARGETS))}.",
+        )
+
+    csvs = sorted(INVENTARIO_DIR.glob(f"{clean_target}_*.csv")) if INVENTARIO_DIR.exists() else []
+    if not csvs:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Sin inventario guardado para '{clean_target}' en backend/inventario/.",
+        )
+
+    firma = tuple((p.name, p.stat().st_mtime) for p in csvs)
+    en_cache = _CACHE_INVENTARIO.get(clean_target)
+    if en_cache and en_cache[0] == firma:
+        return en_cache[1]
+
+    resumen = resumen_inventario_objetivo(clean_target, INVENTARIO_DIR)
+    if resumen is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No se pudo leer el inventario de '{clean_target}'.",
+        )
+
+    _CACHE_INVENTARIO[clean_target] = (firma, resumen)
+    return resumen
+
+
+@app.get("/api/photometry")
+def get_photometry(
+    target: str = Query(..., min_length=1),
+    collection: str = Query("spherex_dr1"),
+):
+    """Fotometría de apertura forzada guardada en backend/fotometria/."""
+    clean_target, clean_collection = validate_photometry_params(target, collection)
+    entries = [e for e in load_photometry_files() if e["target"] == clean_target]
+
+    if clean_collection in ("spherex_both", "both"):
+        seleccionadas = [e for e in entries if e["collection"] in ("spherex_dr1", "spherex_qr3")]
+        if not seleccionadas:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Sin datos de fotometría para '{clean_target}' en spherex_dr1 ni spherex_qr3.",
+            )
+        if len(seleccionadas) == 1:
+            return seleccionadas[0]["data"]
+
+        base = dict(seleccionadas[0]["data"])
+        medidas = []
+        notas = []
+        for item in seleccionadas:
+            medidas.extend(item["data"].get("measurements", []))
+            notas.extend(item["data"].get("notes", []))
+        medidas.sort(key=lambda m: float(m.get("mjd", 0.0)))
+        colecciones_unidas = " + ".join(sorted(item["collection"] for item in seleccionadas))
+        notas.insert(0, f"Combinación de fotometría ({colecciones_unidas}) ordenada por MJD.")
+        base["collection"] = "spherex_both"
+        base["generated_at"] = max(item["generated_at"] for item in seleccionadas)
+        base["notes"] = notas
+        base["measurements"] = medidas
+        return base
+
+    ruta_esperada = (FOTOMETRIA_DIR / f"{clean_target}_{clean_collection}.json").resolve()
+    if ruta_esperada.parent != FOTOMETRIA_DIR.resolve():
+        raise HTTPException(status_code=400, detail="Ruta de fotometría inválida.")
+
+    for item in entries:
+        if item["collection"] == clean_collection:
+            return item["data"]
+
+    disponibles = sorted({e["collection"] for e in entries})
+    extra = f" Colecciones disponibles: {', '.join(disponibles)}." if disponibles else ""
+    raise HTTPException(
+        status_code=404,
+        detail=f"Sin fotometría guardada para '{clean_target}' en '{clean_collection}'.{extra}",
+    )
 
 
 @app.get("/api/frames")
