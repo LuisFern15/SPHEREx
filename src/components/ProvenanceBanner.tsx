@@ -7,7 +7,6 @@ interface ProvenanceBannerProps {
   t: TranslationStrings;
   provenance: ProvenanceState;
   loading: boolean;
-  isLiveQuery?: boolean;
   errorMessage?: string;
   emptyMessage?: string;
   notes: string[];
@@ -20,7 +19,6 @@ export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
   t,
   provenance,
   loading,
-  isLiveQuery = false,
   errorMessage,
   emptyMessage,
   notes,
@@ -81,7 +79,7 @@ export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
           ·
         </span>
         <span className="truncate">
-          {loading ? (isLiveQuery ? t.queryingLiveIrsa : t.queryingBackend) : description}
+          {loading ? t.queryingBackend : description}
         </span>
         {showSizeMismatchNote && actualSize !== undefined && (
           <>

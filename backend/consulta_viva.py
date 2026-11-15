@@ -347,8 +347,10 @@ def consultar_irsa_en_vivo(
         ],
     }
 
-    if not consulta_parcial:
-        if len(_CACHE_RESPUESTAS_VIVAS) >= MAX_ENTRADAS_CACHE_VIVA:
-            _CACHE_RESPUESTAS_VIVAS.pop(next(iter(_CACHE_RESPUESTAS_VIVAS)))
-        _CACHE_RESPUESTAS_VIVAS[clave_cache] = respuesta
+    # También se guardan las respuestas parciales (decisión del equipo): repetir la misma
+    # posición responde al instante con los cuadros ya cargados; la nota sigue indicando
+    # que la consulta fue parcial.
+    if len(_CACHE_RESPUESTAS_VIVAS) >= MAX_ENTRADAS_CACHE_VIVA:
+        _CACHE_RESPUESTAS_VIVAS.pop(next(iter(_CACHE_RESPUESTAS_VIVAS)))
+    _CACHE_RESPUESTAS_VIVAS[clave_cache] = respuesta
     return respuesta

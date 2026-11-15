@@ -335,7 +335,8 @@ export default function App() {
           ) {
             nextCol = collectionToCol(nextTarget.defaultCollection);
           }
-        } else if (prevTarget !== null) {
+        } else {
+          // Manual coordinates always start on DR1 (team decision): it has the most epochs.
           nextCol = 'dr1';
         }
         return {
@@ -471,7 +472,6 @@ export default function App() {
         t={t}
         provenance={queryResult.provenance}
         loading={loading}
-        isLiveQuery={isLiveQuery}
         errorMessage={queryResult.errorMessage}
         emptyMessage={queryResult.emptyMessage}
         notes={queryResult.notes}
