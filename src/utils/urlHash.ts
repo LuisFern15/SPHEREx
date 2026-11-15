@@ -62,7 +62,7 @@ export function getInitialUrlState(): UrlViewerState {
     min: defaultContrast.min,
     max: defaultContrast.max,
     i: 0,
-    flags: 1,
+    flags: 0,
     cat: 0,
     sim: 0,
   };
@@ -110,7 +110,7 @@ export function getInitialUrlState(): UrlViewerState {
     min,
     max,
     i: Math.max(0, Math.floor(parseNum('i', 0))),
-    flags: params.get('flags') === '0' ? 0 : 1,
+    flags: params.get('flags') === '1' ? 1 : 0,
     cat: params.get('cat') === '1' ? 1 : 0,
     sim: params.get('sim') === '1' ? 1 : 0,
   };
