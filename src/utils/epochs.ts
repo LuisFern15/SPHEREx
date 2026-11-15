@@ -64,21 +64,7 @@ export function coaddBandFrames(
 
   const outPixels = new Float32Array(totalPixels);
   for (let i = 0; i < totalPixels; i++) {
-    if (weightCount[i] > 0) {
-      outPixels[i] = sum[i] / weightCount[i];
-    } else {
-      // Fallback to simple finite average if all exposures were flagged bad
-      let fallbackSum = 0;
-      let fallbackN = 0;
-      for (const f of frames) {
-        const val = f.pixels[i];
-        if (Number.isFinite(val)) {
-          fallbackSum += val;
-          fallbackN++;
-        }
-      }
-      outPixels[i] = fallbackN > 0 ? fallbackSum / fallbackN : NaN;
-    }
+    outPixels[i] = weightCount[i] > 0 ? sum[i] / weightCount[i] : NaN;
   }
 
   const meanMjd = mjdSum / frames.length;

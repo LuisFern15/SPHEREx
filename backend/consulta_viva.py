@@ -8,7 +8,8 @@ from __future__ import annotations
 import io
 import logging
 import math
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -40,6 +41,9 @@ logger = logging.getLogger("spherex.live")
 # Caché en memoria de respuestas ya ensambladas para que filtrar por banda D1-D6 sea instantáneo.
 _CACHE_RESPUESTAS_VIVAS: dict[tuple[Any, ...], dict[str, Any]] = {}
 MAX_ENTRADAS_CACHE_VIVA = 24
+PRESUPUESTO_VIVO_SEGUNDOS: float = 45.0
+INTENTOS_RECORTE_VIVO: int = 2
+ESPERA_RECORTE_VIVO: int = 2
 
 
 def _construir_coordenada_objetivo(
@@ -102,7 +106,13 @@ def _procesar_recorte_vivo(
 ) -> tuple[dict[str, Any], dict[str, int]] | None:
     """Descarga (usando backend/cache/) y reproyecta un recorte FITS a la cuadrícula común."""
     url = str(fila["access_url"])
-    contenido = bajar_recorte(url, centro, tamano_grados)
+    contenido = bajar_recorte(
+        url,
+        centro,
+        tamano_grados,
+        intentos=INTENTOS_RECORTE_VIVO,
+        espera=ESPERA_RECORTE_VIVO,
+    )
     with fits.open(io.BytesIO(contenido)) as h:
         imagen = h["IMAGE"].data.astype("<f4")
         if "FLAGS" in h:
@@ -184,7 +194,7 @@ def consultar_irsa_en_vivo(
     dec: float,
     size_arcsec: float,
     collection: str,
-    max_frames: int = 24,
+    max_frames: int = 10,
     pmra: float = 0.0,
     pmdec: float = 0.0,
     epoch: str = "J2016.0",
@@ -206,6 +216,7 @@ def consultar_irsa_en_vivo(
         cached_resp["cached"] = True
         return cached_resp
 
+    inicio = time.monotonic()
     colecciones = ["spherex_dr1", "spherex_qr3"] if collection in ("both", "spherex_both") else [collection]
     centro = SkyCoord(ra=ra * u.deg, dec=dec * u.deg, frame="icrs")
     base, tiene_movimiento = _construir_coordenada_objetivo(ra, dec, pmra=pmra, pmdec=pmdec, epoch=epoch)
@@ -220,8 +231,8 @@ def consultar_irsa_en_vivo(
             tabla = list(
                 con_reintentos(
                     lambda c=col: Irsa.query_sia(pos=(centro, 0.003 * u.deg), collection=c, maxrec=5000),
-                    intentos=3,
-                    espera=4,
+                    intentos=2,
+                    espera=3,
                     nombre=f"SIA {col}",
                 )
             )
@@ -245,24 +256,49 @@ def consultar_irsa_en_vivo(
     cuadros: list[dict[str, Any]] = []
     bits: dict[str, int] = {}
     errores_descarga = 0
+    consulta_parcial = False
 
-    with ThreadPoolExecutor(max_workers=6) as pool:
+    pool = ThreadPoolExecutor(max_workers=6)
+    try:
         futuros = {
             pool.submit(_procesar_recorte_vivo, fila, centro, base, tiene_movimiento, tamano_grados, col): (col, fila)
             for col, fila in candidatas_por_col
         }
-        for futuro in as_completed(futuros):
-            try:
-                res = futuro.result()
-                if res is not None:
-                    cuadro, bits_cuadro = res
-                    cuadros.append(cuadro)
-                    bits.update(bits_cuadro)
-            except (requests.RequestException, OSError, KeyError, ValueError) as error:
-                errores_descarga += 1
-                logger.warning("Recorte vivo descartado: %s", error)
+        restante = max(1.0, PRESUPUESTO_VIVO_SEGUNDOS - (time.monotonic() - inicio))
+        try:
+            for futuro in as_completed(futuros, timeout=restante):
+                try:
+                    res = futuro.result()
+                    if res is not None:
+                        cuadro, bits_cuadro = res
+                        cuadros.append(cuadro)
+                        bits.update(bits_cuadro)
+                except (requests.RequestException, OSError, KeyError, ValueError) as error:
+                    errores_descarga += 1
+                    logger.warning("Recorte vivo descartado: %s", error)
+        except FuturesTimeoutError:
+            consulta_parcial = True
+            logger.warning(
+                "Presupuesto de tiempo (%.0f s) agotado en consulta viva; cuadros procesados: %d/%d",
+                PRESUPUESTO_VIVO_SEGUNDOS,
+                len(cuadros),
+                len(futuros),
+            )
+            for futuro in futuros:
+                if not futuro.done():
+                    futuro.cancel()
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
 
     if not cuadros:
+        if consulta_parcial:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    f"Se agotó el tiempo máximo ({int(PRESUPUESTO_VIVO_SEGUNDOS)} s) consultando IRSA "
+                    "sin poder procesar ningún cuadro. Intenta de nuevo en unos segundos."
+                ),
+            )
         if errores_descarga > 0:
             raise HTTPException(
                 status_code=503,
@@ -282,6 +318,18 @@ def consultar_irsa_en_vivo(
         )
     cuadros.sort(key=lambda c: float(c["mjd"]) if c.get("mjd") is not None else float("inf"))
 
+    if consulta_parcial:
+        nota_resumen = (
+            f"Consulta parcial en vivo a IRSA ({', '.join(colecciones)}): "
+            f"se cargaron {len(cuadros)} cuadros de {total_en_irsa} exposiciones disponibles "
+            f"antes de agotar el límite de {int(PRESUPUESTO_VIVO_SEGUNDOS)} s."
+        )
+    else:
+        nota_resumen = (
+            f"Consulta en vivo a IRSA ({', '.join(colecciones)}): "
+            f"{len(cuadros)} cuadros cargados de {total_en_irsa} exposiciones disponibles en esta posición."
+        )
+
     respuesta: dict[str, Any] = {
         "query": {"ra": ra, "dec": dec, "size_arcsec": size_arcsec, "collection": collection},
         "pixel_scale_arcsec": ESCALA_PX,
@@ -294,12 +342,13 @@ def consultar_irsa_en_vivo(
         "catalog_sources": [],
         "frames": cuadros,
         "notes": [
-            f"Consulta en vivo a IRSA ({', '.join(colecciones)}): {len(cuadros)} cuadros cargados de {total_en_irsa} exposiciones disponibles en esta posición.",
+            nota_resumen,
             "Cuadros reproyectados (vecino más cercano) a cuadrícula TAN común de 6.15″/px (norte arriba, este a la izquierda).",
         ],
     }
 
-    if len(_CACHE_RESPUESTAS_VIVAS) >= MAX_ENTRADAS_CACHE_VIVA:
-        _CACHE_RESPUESTAS_VIVAS.pop(next(iter(_CACHE_RESPUESTAS_VIVAS)))
-    _CACHE_RESPUESTAS_VIVAS[clave_cache] = respuesta
+    if not consulta_parcial:
+        if len(_CACHE_RESPUESTAS_VIVAS) >= MAX_ENTRADAS_CACHE_VIVA:
+            _CACHE_RESPUESTAS_VIVAS.pop(next(iter(_CACHE_RESPUESTAS_VIVAS)))
+        _CACHE_RESPUESTAS_VIVAS[clave_cache] = respuesta
     return respuesta

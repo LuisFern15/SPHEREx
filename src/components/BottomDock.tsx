@@ -6,7 +6,7 @@ import {
   Play,
   Repeat,
 } from 'lucide-react';
-import { SPHEREX_BANDS } from '../data/targets';
+import { SPHEREX_BANDS, collectionsForTarget, formatIrsaCoverage } from '../data/targets';
 import { TranslationStrings } from '../i18n/translations';
 import {
   DecodedSpherexFrame,
@@ -359,7 +359,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
             </span>
             {activeTarget && (
               <span className="text-[10px] font-mono tabular-nums text-slate-400">
-                DR1:{activeTarget.irsaCoverage.dr1} / QR3:{activeTarget.irsaCoverage.qr3}
+                {formatIrsaCoverage(activeTarget, collectionsForTarget(activeTarget), t)}
               </span>
             )}
           </div>

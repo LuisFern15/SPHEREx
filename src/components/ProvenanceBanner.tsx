@@ -7,7 +7,9 @@ interface ProvenanceBannerProps {
   t: TranslationStrings;
   provenance: ProvenanceState;
   loading: boolean;
+  isLiveQuery?: boolean;
   errorMessage?: string;
+  emptyMessage?: string;
   notes: string[];
   onRetry: () => void;
 }
@@ -16,7 +18,9 @@ export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
   t,
   provenance,
   loading,
+  isLiveQuery = false,
   errorMessage,
+  emptyMessage,
   notes,
   onRetry,
 }) => {
@@ -32,6 +36,12 @@ export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
     description = t.provenanceCachedDesc;
     containerCls = 'bg-amber-950/30 border-amber-800/60 text-amber-100';
     badgeCls = 'text-amber-400';
+  } else if (provenance === 'error' && emptyMessage) {
+    glyph = '○';
+    label = t.provenanceEmpty;
+    description = emptyMessage;
+    containerCls = 'bg-slate-900/80 border-slate-700 text-slate-200';
+    badgeCls = 'text-slate-300';
   } else if (provenance === 'error') {
     glyph = '✖';
     label = t.provenanceError;
@@ -58,8 +68,10 @@ export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
         <span className="text-slate-400" aria-hidden="true">
           ·
         </span>
-        <span className="truncate">{loading ? 'Consultando / Querying SPHEREx...' : description}</span>
-        {notes.length > 0 && (
+        <span className="truncate">
+          {loading ? (isLiveQuery ? t.queryingLiveIrsa : t.queryingBackend) : description}
+        </span>
+        {!loading && notes.length > 0 && (
           <>
             <span className="text-slate-500" aria-hidden="true">
               ·
@@ -69,7 +81,7 @@ export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
         )}
       </div>
 
-      {provenance === 'error' && (
+      {provenance === 'error' && !emptyMessage && (
         <button
           type="button"
           onClick={onRetry}

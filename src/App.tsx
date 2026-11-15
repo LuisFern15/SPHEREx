@@ -6,9 +6,9 @@ import { ProvenanceBanner } from './components/ProvenanceBanner';
 import { RightPanel } from './components/RightPanel';
 import { TopBar } from './components/TopBar';
 import {
-  AVAILABLE_COLLECTIONS,
   DEFAULT_BAND_CONTRAST,
   TARGET_PRESETS,
+  collectionsForTarget,
   dateToJulianYear,
   mjdToJulianYear,
   propagatePosition,
@@ -179,10 +179,12 @@ export default function App() {
     [urlState.ra, urlState.dec]
   );
 
-  const availableCollections = useMemo(() => {
-    const base: string[] = [...AVAILABLE_COLLECTIONS];
-    return base.includes(activeCollection) ? base : [activeCollection, ...base];
-  }, [activeCollection]);
+  const isLiveQuery = !activeTarget && urlState.sim !== 1;
+
+  const availableCollections = useMemo(
+    () => collectionsForTarget(activeTarget, activeCollection),
+    [activeTarget, activeCollection]
+  );
 
   const epochs = useMemo(
     () => groupFramesIntoEpochs(queryResult.frames, queryResult.flag_bits),
@@ -316,18 +318,38 @@ export default function App() {
     }));
   }, [bandContrasts]);
 
-  const handleSearchCoords = useCallback((ra: number, dec: number, size: number) => {
-    setPlaying(false);
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
-    setUrlState((prev) => ({
-      ...prev,
-      ra: Number(ra.toFixed(6)),
-      dec: Number(dec.toFixed(6)),
-      size: clampFieldSize(size),
-      i: 0,
-    }));
-  }, []);
+  const handleSearchCoords = useCallback(
+    (ra: number, dec: number, size: number) => {
+      const prevTarget = findMatchingTarget(urlState.ra, urlState.dec);
+      const nextTarget = findMatchingTarget(ra, dec);
+      setPlaying(false);
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
+      setUrlState((prev) => {
+        let nextCol = prev.col;
+        if (nextTarget) {
+          const currentColName = colToCollection(prev.col);
+          if (
+            nextTarget.id !== prevTarget?.id ||
+            !nextTarget.collections.includes(currentColName)
+          ) {
+            nextCol = collectionToCol(nextTarget.defaultCollection);
+          }
+        } else if (prevTarget !== null) {
+          nextCol = 'dr1';
+        }
+        return {
+          ...prev,
+          ra: Number(ra.toFixed(6)),
+          dec: Number(dec.toFixed(6)),
+          size: clampFieldSize(size),
+          col: nextCol,
+          i: 0,
+        };
+      });
+    },
+    [urlState.ra, urlState.dec]
+  );
 
   const handleSelectBand = useCallback(
     (nextBand: number) => {
@@ -449,7 +471,9 @@ export default function App() {
         t={t}
         provenance={queryResult.provenance}
         loading={loading}
+        isLiveQuery={isLiveQuery}
         errorMessage={queryResult.errorMessage}
+        emptyMessage={queryResult.emptyMessage}
         notes={queryResult.notes}
         onRetry={() => setRetryNonce((n) => n + 1)}
       />
@@ -462,7 +486,9 @@ export default function App() {
           refFrame={refFrame}
           provenance={queryResult.provenance}
           loading={loading}
+          isLiveQuery={isLiveQuery}
           errorMessage={queryResult.errorMessage}
+          emptyMessage={queryResult.emptyMessage}
           onRetry={() => setRetryNonce((n) => n + 1)}
           min={activeContrast.min}
           max={activeContrast.max}

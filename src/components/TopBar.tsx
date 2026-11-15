@@ -116,7 +116,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             >
               {availableCollections.map((col) => (
                 <option key={col} value={col}>
-                  {col}
+                  {col === 'spherex_both' ? t.collectionBoth : col}
                 </option>
               ))}
             </select>

@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
-import { mjdToJulianYear, propagatePosition } from '../data/targets';
+import {
+  collectionsForTarget,
+  formatIrsaCoverage,
+  mjdToJulianYear,
+  propagatePosition,
+} from '../data/targets';
 import { TranslationStrings } from '../i18n/translations';
 import { Canvas2DRenderer } from '../rendering/canvas2dRenderer';
 import { CutoutRenderer, ViewportTransform } from '../rendering/cutoutRenderer';
@@ -33,7 +38,9 @@ interface CutoutViewportProps {
   refFrame: DecodedSpherexFrame | null;
   provenance: ProvenanceState;
   loading: boolean;
+  isLiveQuery?: boolean;
   errorMessage?: string;
+  emptyMessage?: string;
   onRetry: () => void;
   min: number;
   max: number;
@@ -70,7 +77,9 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
   refFrame,
   provenance,
   loading,
+  isLiveQuery = false,
   errorMessage,
+  emptyMessage,
   onRetry,
   min,
   max,
@@ -250,7 +259,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     };
   }, [displayedFrame, transform, activeTarget]);
 
-  // Flagged pixel overlay elements
+  // Flagged pixel overlay elements (only saturation, persistence, and bad; omit source/other)
   const flagOverlayCells = useMemo(() => {
     if (!showFlags || !displayedFrame || !transform) return [];
     const [imgH, imgW] = displayedFrame.shape;
@@ -259,7 +268,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       sx: number;
       sy: number;
       size: number;
-      kind: 'saturation' | 'persistence' | 'bad' | 'source' | 'other';
+      kind: 'saturation' | 'persistence' | 'bad';
     }[] = [];
 
     for (let y = 0; y < imgH; y++) {
@@ -269,11 +278,12 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
         const active = decodePixelFlags(mask, flagBits);
         if (active.length === 0) continue;
 
-        let chosenKind: 'saturation' | 'persistence' | 'bad' | 'source' | 'other' = 'other';
+        let chosenKind: 'saturation' | 'persistence' | 'bad' | null = null;
         if (active.some((f) => f.category === 'saturation')) chosenKind = 'saturation';
         else if (active.some((f) => f.category === 'persistence')) chosenKind = 'persistence';
         else if (active.some((f) => f.category === 'bad')) chosenKind = 'bad';
-        else if (active.some((f) => f.category === 'source')) chosenKind = 'source';
+
+        if (!chosenKind) continue;
 
         const sx = transform.drawX + x * transform.pixelSize;
         const sy = transform.drawY + (imgH - 1 - y) * transform.pixelSize;
@@ -306,6 +316,19 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     }
     return pts;
   }, [showCatalog, displayedFrame, transform, catalogSources]);
+
+  const fallbackCollection = useMemo(() => {
+    if (activeTarget) {
+      if (
+        activeCollection !== 'spherex_both' &&
+        activeTarget.collections.includes('spherex_both')
+      ) {
+        return 'spherex_both';
+      }
+      return activeTarget.collections.find((c) => c !== activeCollection) ?? null;
+    }
+    return activeCollection === 'spherex_both' ? 'spherex_dr1' : 'spherex_both';
+  }, [activeTarget, activeCollection]);
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (dragging && dragStartRef.current) {
@@ -358,6 +381,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       ref={containerRef}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
+        if ((e.target as HTMLElement).closest('button, a, input, select, textarea')) return;
         setDragging(true);
         dragStartRef.current = { x: e.clientX, y: e.clientY, panX, panY };
       }}
@@ -417,25 +441,11 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
                 />
               );
             }
-            if (cell.kind === 'bad') {
-              return (
-                <g key={cell.key} stroke="#E879F9" strokeWidth={1.2}>
-                  <line x1={cell.sx + 2} y1={cell.sy + 2} x2={cell.sx + cell.size - 2} y2={cell.sy + cell.size - 2} />
-                  <line x1={cell.sx + cell.size - 2} y1={cell.sy + 2} x2={cell.sx + 2} y2={cell.sy + cell.size - 2} />
-                </g>
-              );
-            }
             return (
-              <rect
-                key={cell.key}
-                x={cell.sx + 1}
-                y={cell.sy + 1}
-                width={Math.max(2, cell.size - 2)}
-                height={Math.max(2, cell.size - 2)}
-                fill="none"
-                stroke="rgba(34, 211, 238, 0.55)"
-                strokeWidth={1}
-              />
+              <g key={cell.key} stroke="#E879F9" strokeWidth={1.2}>
+                <line x1={cell.sx + 2} y1={cell.sy + 2} x2={cell.sx + cell.size - 2} y2={cell.sy + cell.size - 2} />
+                <line x1={cell.sx + cell.size - 2} y1={cell.sy + 2} x2={cell.sx + 2} y2={cell.sy + cell.size - 2} />
+              </g>
             );
           })}
 
@@ -591,8 +601,22 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
         </div>
       )}
 
+      {/* Loading Overlay */}
+      {loading && (
+        <div
+          className="absolute inset-0 flex items-center justify-center p-6 bg-[#07090E]/75 pointer-events-none"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="border border-slate-700 bg-[#0F141F]/95 rounded px-4 py-2.5 flex items-center gap-2.5 text-xs text-cyan-300 font-mono">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" aria-hidden="true" />
+            <span>{isLiveQuery ? t.queryingLiveIrsa : t.loadingData}</span>
+          </div>
+        </div>
+      )}
+
       {/* Explicit Error or Empty State (Never a blank unexplained canvas) */}
-      {!loading && provenance === 'error' && (
+      {!loading && provenance === 'error' && !emptyMessage && (
         <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#07090E]/90">
           <div className="max-w-md border border-rose-800/70 bg-[#0F141F] rounded p-5 flex flex-col gap-3">
             <div className="text-sm font-semibold text-rose-300">
@@ -620,33 +644,66 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
         </div>
       )}
 
+      {!loading && provenance === 'error' && emptyMessage && (
+        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#07090E]/90">
+          <div className="max-w-md border border-slate-700 bg-[#0F141F] rounded p-5 flex flex-col gap-3">
+            <div className="text-sm font-semibold text-slate-200">
+              {t.emptyCollectionTitle} ({activeCollection})
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">{emptyMessage}</p>
+            {activeTarget && (
+              <div className="text-[11px] font-mono tabular-nums text-slate-400">
+                {t.irsaCoverageLabel}:{' '}
+                {formatIrsaCoverage(
+                  activeTarget,
+                  collectionsForTarget(activeTarget, activeCollection),
+                  t
+                )}
+              </div>
+            )}
+            {fallbackCollection && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => onSwitchCollection(fallbackCollection)}
+                  className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-xs font-semibold rounded transition-colors cursor-pointer"
+                >
+                  {t.tryAnotherCollectionButton}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {!loading && provenance !== 'error' && totalFramesCount === 0 && (
         <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#07090E]/90">
-          <div className="max-w-md border border-amber-700/70 bg-[#0F141F] rounded p-5 flex flex-col gap-3">
-            <div className="text-sm font-semibold text-amber-300">
-              ▲ {t.emptyCollectionTitle} ({activeCollection})
+          <div className="max-w-md border border-slate-700 bg-[#0F141F] rounded p-5 flex flex-col gap-3">
+            <div className="text-sm font-semibold text-slate-200">
+              {t.emptyCollectionTitle} ({activeCollection})
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">{t.emptyCollectionBody}</p>
             {activeTarget && (
               <div className="text-[11px] font-mono tabular-nums text-slate-400">
-                {t.irsaCoverageLabel}: DR1 {activeTarget.irsaCoverage.dr1} · QR3{' '}
-                {activeTarget.irsaCoverage.qr3}
+                {t.irsaCoverageLabel}:{' '}
+                {formatIrsaCoverage(
+                  activeTarget,
+                  collectionsForTarget(activeTarget, activeCollection),
+                  t
+                )}
               </div>
             )}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() =>
-                  onSwitchCollection(
-                    activeCollection === 'spherex_qr3' ? 'spherex_dr1' : 'spherex_qr3'
-                  )
-                }
-                className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-xs font-semibold rounded transition-colors cursor-pointer"
-              >
-                {t.switchCollectionButton}{' '}
-                {activeCollection === 'spherex_qr3' ? 'spherex_dr1' : 'spherex_qr3'}
-              </button>
-            </div>
+            {fallbackCollection && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => onSwitchCollection(fallbackCollection)}
+                  className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-xs font-semibold rounded transition-colors cursor-pointer"
+                >
+                  {t.tryAnotherCollectionButton}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

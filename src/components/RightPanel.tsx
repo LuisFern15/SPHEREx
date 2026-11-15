@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, Layers, Pin, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
-import { AVAILABLE_COLLECTIONS } from '../data/targets';
+import { collectionsForTarget, formatIrsaCoverage } from '../data/targets';
 import { TranslationStrings } from '../i18n/translations';
 import { getColormapPreviewGradient } from '../rendering/colormaps';
 import {
@@ -104,6 +104,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   const sliderMaxBound = Math.max(200, Math.ceil(max + 50));
 
   const diffBlocked = Boolean(deltaLambdaInfo?.exceedsHalfChannel && !allowUnsafeDiff);
+  const availableCollections = collectionsForTarget(activeTarget, collection);
 
   return (
     <aside className="w-full lg:w-[340px] bg-[#0B0F17] border-t lg:border-t-0 lg:border-l border-slate-800 flex flex-col shrink-0 overflow-hidden">
@@ -168,10 +169,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         <div className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-4 text-xs">
           {/* IRSA Collection Selector & Verified Coverage */}
           <section className="flex flex-col gap-2 border-b border-slate-800/80 pb-3.5">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="font-semibold text-slate-200">{t.collectionLabel}</span>
-              <div className="grid grid-cols-2 gap-1 bg-[#07090E] p-0.5 rounded border border-slate-800">
-                {AVAILABLE_COLLECTIONS.map((col) => (
+              <div className="flex flex-wrap items-center gap-1 bg-[#07090E] p-0.5 rounded border border-slate-800">
+                {availableCollections.map((col) => (
                   <button
                     key={col}
                     type="button"
@@ -182,16 +183,16 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                         : 'text-slate-300 hover:text-white'
                     }`}
                   >
-                    {col}
+                    {col === 'spherex_both' ? t.collectionBoth : col}
                   </button>
                 ))}
               </div>
             </div>
             {activeTarget && (
-              <div className="flex items-center justify-between text-[11px] font-mono tabular-nums text-slate-400 bg-[#07090E] border border-slate-800/80 rounded px-2.5 py-1">
+              <div className="flex items-center justify-between gap-2 text-[11px] font-mono tabular-nums text-slate-400 bg-[#07090E] border border-slate-800/80 rounded px-2.5 py-1">
                 <span>{t.irsaCoverageLabel}</span>
                 <span className="text-slate-200">
-                  DR1: {activeTarget.irsaCoverage.dr1} · QR3: {activeTarget.irsaCoverage.qr3}
+                  {formatIrsaCoverage(activeTarget, availableCollections, t)}
                 </span>
               </div>
             )}
@@ -348,12 +349,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 <div className="flex flex-wrap gap-x-3 gap-y-1">
                   <span className="text-rose-400 font-mono">■ OVERFLOW/NONLINEAR</span>
                   <span className="text-amber-400 font-mono">□ PERSIST</span>
-                  <span className="text-cyan-300 font-mono">□ SOURCE</span>
                   <span className="text-fuchsia-400 font-mono">× NONFUNC/BAD</span>
                 </div>
                 <div className="text-[10px] text-slate-400 leading-snug">
                   <div>{t.transientFlagHelp}</div>
-                  <div>{t.sourceFlagHelp}</div>
+                  <div>{t.infoFlagsOverlayNote}</div>
                 </div>
               </div>
             )}

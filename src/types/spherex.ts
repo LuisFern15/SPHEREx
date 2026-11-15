@@ -71,10 +71,12 @@ export interface FramesQueryResult {
   cached: boolean;
   flag_bits: FlagBitsMap;
   usingDefaultFlagBits: boolean;
+  target?: unknown;
   catalog_sources: CatalogSource[];
   frames: DecodedSpherexFrame[];
   notes: string[];
   errorMessage?: string;
+  emptyMessage?: string;
 }
 
 export interface TargetReferencePosition {
@@ -117,7 +119,9 @@ export interface EpochGroup {
   coaddsByBand: Record<number, DecodedSpherexFrame>;
 }
 
-export type CollectionShortCode = 'qr3' | 'dr1';
+export type CollectionName = 'spherex_qr3' | 'spherex_dr1' | 'spherex_both';
+
+export type CollectionShortCode = 'qr3' | 'dr1' | 'both';
 
 export interface UrlViewerState {
   ra: number;
