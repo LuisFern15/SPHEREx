@@ -1,0 +1,151 @@
+clave,banda,visita,fecha,motivo
+level2_2025W33_2C_0321_1D6_spx_l2b-v27-2026-228,6,1,2025-08-15T20:45:11,inicio linea base snapshot 0.943
+level2_2025W33_2C_0321_1D3_spx_l2b-v27-2026-228,3,1,2025-08-15T20:45:11,inicio linea base en B3 visita 1
+level2_2025W33_2C_0321_3D3_spx_l2b-v27-2026-228,3,1,2025-08-15T20:49:29,inicio linea base en B3 visita 1
+level2_2025W33_2C_0321_3D6_spx_l2b-v27-2026-228,6,1,2025-08-15T20:49:29,inicio linea base snapshot 0.928
+level2_2025W33_2C_0386_3D6_spx_l2b-v27-2026-228,6,1,2025-08-16T03:19:14,cobertura visita 1 B6 16-ago
+level2_2025W33_2C_0386_3D3_spx_l2b-v27-2026-228,3,1,2025-08-16T03:19:14,cobertura visita 1 B3 16-ago
+level2_2025W34_1B_0164_1D3_spx_l2b-v27-2026-228,3,1,2025-08-18T20:28:41,snapshot 0.956 visita 1 B3
+level2_2025W34_1B_0164_1D6_spx_l2b-v27-2026-228,6,1,2025-08-18T20:28:41,snapshot 0.938 visita 1 B6
+level2_2025W34_1B_0164_2D6_spx_l2b-v27-2026-228,6,1,2025-08-18T20:30:50,refuerzo visita 1 B6 18-ago
+level2_2025W34_1B_0164_3D3_spx_l2b-v27-2026-228,3,1,2025-08-18T20:32:59,refuerzo visita 1 B3 18-ago
+level2_2025W34_2B_0030_1D6_spx_l2b-v27-2026-229,6,1,2025-08-21T15:20:26,snapshot 0.937 visita 1 B6
+level2_2025W34_2B_0030_1D3_spx_l2b-v27-2026-229,3,1,2025-08-21T15:20:26,refuerzo visita 1 B3 21-ago
+level2_2025W34_2B_0030_3D3_spx_l2b-v27-2026-229,3,1,2025-08-21T15:24:43,snapshot 0.953 visita 1 B3
+level2_2025W34_2B_0030_4D3_spx_l2b-v27-2026-229,3,1,2025-08-21T15:26:52,refuerzo visita 1 B3 21-ago
+level2_2025W34_2B_0030_4D6_spx_l2b-v27-2026-229,6,1,2025-08-21T15:26:52,refuerzo visita 1 B6 21-ago
+level2_2025W34_2B_0090_4D2_spx_l2b-v27-2026-229,2,1,2025-08-21T23:33:58,inicio B2 en visita 1
+level2_2025W34_2B_0090_4D5_spx_l2b-v27-2026-229,5,1,2025-08-21T23:33:58,snapshot 0.960 visita 1 B5
+level2_2025W34_2B_0557_1D2_spx_l2b-v27-2026-229,2,1,2025-08-24T11:46:28,cobertura B2 visita 1
+level2_2025W34_2B_0557_1D5_spx_l2b-v27-2026-229,5,1,2025-08-24T11:46:28,refuerzo visita 1 B5 24-ago
+level2_2025W34_2B_0557_2D5_spx_l2b-v27-2026-229,5,1,2025-08-24T11:48:37,snapshot 0.994 visita 1 B5
+level2_2025W34_2B_0557_2D2_spx_l2b-v27-2026-229,2,1,2025-08-24T11:48:37,refuerzo visita 1 B2 24-ago
+level2_2025W34_2B_0557_4D5_spx_l2b-v27-2026-229,5,1,2025-08-24T11:52:54,snapshot 0.992 visita 1 B5
+level2_2025W34_2B_0557_4D2_spx_l2b-v27-2026-229,2,1,2025-08-24T11:52:54,refuerzo visita 1 B2 24-ago
+level2_2025W35_1A_0008_1D3_spx_l2b-v27-2026-230,3,1,2025-08-25T00:49:34,snapshot 0.950 visita 1 B3
+level2_2025W35_1A_0008_1D6_spx_l2b-v27-2026-230,6,1,2025-08-25T00:49:34,cobertura intermedia B6 visita 1
+level2_2025W35_1A_0008_3D3_spx_l2b-v27-2026-230,3,1,2025-08-25T00:53:52,snapshot 0.947 visita 1 B3
+level2_2025W35_1A_0008_4D6_spx_l2b-v27-2026-230,6,1,2025-08-25T00:56:01,refuerzo visita 1 B6 25-ago
+level2_2025W35_1A_0146_1D5_spx_l2b-v27-2026-230,5,1,2025-08-25T17:08:22,refuerzo visita 1 B5 25-ago
+level2_2025W35_1A_0146_1D2_spx_l2b-v27-2026-230,2,1,2025-08-25T17:08:22,refuerzo visita 1 B2 25-ago
+level2_2025W35_1A_0146_2D5_spx_l2b-v27-2026-230,5,1,2025-08-25T17:10:31,cobertura B5 visita 1
+level2_2025W35_1A_0146_2D2_spx_l2b-v27-2026-230,2,1,2025-08-25T17:10:31,snapshot 1.000 visita 1 B2
+level2_2025W35_1A_0146_4D2_spx_l2b-v27-2026-230,2,1,2025-08-25T17:14:49,snapshot 0.976 visita 1 B2
+level2_2025W35_1A_0146_4D5_spx_l2b-v27-2026-230,5,1,2025-08-25T17:14:49,refuerzo visita 1 B5 25-ago
+level2_2025W35_1A_0432_4D1_spx_l2b-v27-2026-230,1,1,2025-08-27T05:06:02,snapshot 0.957 visita 1 B1
+level2_2025W35_1A_0432_4D4_spx_l2b-v27-2026-230,4,1,2025-08-27T05:06:02,snapshot 0.945 visita 1 B4
+level2_2025W35_1A_0444_1D5_spx_l2b-v27-2026-230,5,1,2025-08-27T06:37:49,refuerzo visita 1 B5 27-ago
+level2_2025W35_1A_0444_2D2_spx_l2b-v27-2026-230,2,1,2025-08-27T06:39:58,cobertura B2 visita 1
+level2_2025W35_1A_0444_3D5_spx_l2b-v27-2026-230,5,1,2025-08-27T06:42:07,snapshot 0.991 visita 1 B5
+level2_2025W35_1A_0444_4D2_spx_l2b-v27-2026-230,2,1,2025-08-27T06:44:16,refuerzo visita 1 B2 27-ago
+level2_2025W35_1A_0484_1D6_spx_l2b-v27-2026-230,6,1,2025-08-27T11:34:56,refuerzo visita 1 B6 27-ago
+level2_2025W35_1A_0484_2D6_spx_l2b-v27-2026-230,6,1,2025-08-27T11:37:04,snapshot 0.933 visita 1 B6
+level2_2025W35_1A_0484_2D3_spx_l2b-v27-2026-230,3,1,2025-08-27T11:37:04,cobertura visita 1 B3 27-ago
+level2_2025W35_1A_0658_1D1_spx_l2b-v27-2026-230,1,1,2025-08-28T10:20:49,refuerzo B1 visita 1
+level2_2025W35_1A_0658_1D4_spx_l2b-v27-2026-230,4,1,2025-08-28T10:20:49,cobertura visita 1 B4 28-ago
+level2_2025W35_1A_0658_2D1_spx_l2b-v27-2026-230,1,1,2025-08-28T10:22:58,snapshot 0.961 visita 1 B1
+level2_2025W35_2A_0221_1D5_spx_l2b-v27-2026-231,5,1,2025-08-29T15:44:43,snapshot 0.973 visita 1 B5
+level2_2025W35_2A_0221_1D2_spx_l2b-v27-2026-231,2,1,2025-08-29T15:44:43,refuerzo visita 1 B2 29-ago
+level2_2025W35_2A_0221_2D5_spx_l2b-v27-2026-231,5,1,2025-08-29T15:46:54,refuerzo B5 visita 1
+level2_2025W35_2A_0221_2D2_spx_l2b-v27-2026-231,2,1,2025-08-29T15:46:54,snapshot 0.989 visita 1 B2
+level2_2025W35_2A_0221_4D2_spx_l2b-v27-2026-231,2,1,2025-08-29T15:51:12,snapshot 0.999 visita 1 B2
+level2_2025W35_2A_0221_4D5_spx_l2b-v27-2026-231,5,1,2025-08-29T15:51:12,refuerzo visita 1 B5 29-ago
+level2_2025W35_2A_0233_1D1_spx_l2b-v27-2026-231,1,1,2025-08-29T17:19:38,cobertura B1 visita 1
+level2_2025W35_2A_0233_1D4_spx_l2b-v27-2026-231,4,1,2025-08-29T17:19:38,snapshot 0.939 visita 1 B4
+level2_2025W35_2A_0233_3D4_spx_l2b-v27-2026-231,4,1,2025-08-29T17:23:57,snapshot 0.936 visita 1 B4
+level2_2025W35_2A_0233_4D1_spx_l2b-v27-2026-231,1,1,2025-08-29T17:26:06,refuerzo visita 1 B1 29-ago
+level2_2025W35_2A_0418_1D2_spx_l2b-v27-2026-231,2,1,2025-08-30T16:10:28,fin B2 en visita 1
+level2_2025W35_2A_0418_1D5_spx_l2b-v27-2026-231,5,1,2025-08-30T16:10:28,fin B5 en visita 1
+level2_2025W35_2A_0474_1D1_spx_l2b-v27-2026-231,1,1,2025-08-30T22:40:06,refuerzo visita 1 B1 30-ago
+level2_2025W35_2A_0474_1D4_spx_l2b-v27-2026-231,4,1,2025-08-30T22:40:06,snapshot 0.958 visita 1 B4
+level2_2025W35_2A_0474_3D4_spx_l2b-v27-2026-231,4,1,2025-08-30T22:44:24,refuerzo visita 1 B4 30-ago
+level2_2025W35_2A_0474_4D1_spx_l2b-v27-2026-231,1,1,2025-08-30T22:46:33,snapshot 0.965 visita 1 B1
+level2_2025W35_2A_0611_1D1_spx_l2b-v27-2026-231,1,1,2025-08-31T14:57:34,cobertura B1 visita 1
+level2_2025W35_2A_0611_1D4_spx_l2b-v27-2026-231,4,1,2025-08-31T14:57:34,snapshot 0.941 visita 1 B4
+level2_2025W35_2A_0611_3D4_spx_l2b-v27-2026-231,4,1,2025-08-31T15:01:53,snapshot 0.939 visita 1 B4
+level2_2025W36_1A_0024_1D1_spx_l2b-v27-2026-232,1,1,2025-09-01T02:28:22,fin B1 en visita 1
+level2_2025W36_1A_0024_1D4_spx_l2b-v27-2026-232,4,1,2025-09-01T02:28:22,snapshot 0.938 visita 1 B4
+level2_2025W36_2B_0123_1D1_spx_l2b-v27-2026-234,1,2,2025-09-05T02:34:22,unica B1 en visita 2
+level2_2025W36_2B_0123_1D4_spx_l2b-v27-2026-234,4,2,2025-09-05T02:34:22,unica B4 en visita 2
+level2_2025W40_1A_0353_1D1_spx_l2b-v27-2026-239,1,3,2025-09-30T14:02:53,inicio B1 visita 3
+level2_2025W40_1A_0353_1D4_spx_l2b-v27-2026-239,4,3,2025-09-30T14:02:53,refuerzo B4 visita 3
+level2_2025W40_1A_0367_1D1_spx_l2b-v27-2026-239,1,3,2025-09-30T15:40:39,cobertura B1 visita 3
+level2_2025W40_1A_0367_1D4_spx_l2b-v27-2026-239,4,3,2025-09-30T15:40:39,snapshot 0.974 visita 3 B4
+level2_2025W40_1A_0441_1D1_spx_l2b-v27-2026-239,1,3,2025-09-30T23:51:40,refuerzo visita 3 B1 fecha distinta
+level2_2025W40_1A_0441_1D4_spx_l2b-v27-2026-239,4,3,2025-09-30T23:51:40,refuerzo visita 3 B4 fecha distinta
+level2_2025W40_1A_0471_1D1_spx_l2b-v27-2026-239,1,3,2025-10-01T03:07:36,cierre B1 visita 3
+level2_2025W40_1A_0471_1D4_spx_l2b-v27-2026-239,4,3,2025-10-01T03:07:36,snapshot 0.935 visita 3 B4
+level2_2025W40_1A_0500_1D1_spx_l2b-v27-2026-239,1,3,2025-10-01T06:22:54,refuerzo visita 3 B1 cierre temporal
+level2_2025W40_1A_0500_1D4_spx_l2b-v27-2026-239,4,3,2025-10-01T06:22:54,refuerzo visita 3 B4 cierre temporal
+level2_2026W11_1A_0430_2D4_spx_l2b-v27-2026-232,4,4,2026-03-11T02:11:37,inicio B4 visita 4
+level2_2026W11_1A_0430_2D1_spx_l2b-v27-2026-232,1,4,2026-03-11T02:11:37,snapshot 0.970 visita 4 B1
+level2_2026W11_1A_0430_4D4_spx_l2b-v27-2026-232,4,4,2026-03-11T02:15:55,refuerzo visita 4 B4 bloque 0430
+level2_2026W11_1A_0430_4D1_spx_l2b-v27-2026-232,1,4,2026-03-11T02:15:55,refuerzo visita 4 B1 bloque 0430
+level2_2026W11_1A_0444_1D4_spx_l2b-v27-2026-232,4,4,2026-03-11T03:47:08,cobertura visita 4 B4 bloque 0444
+level2_2026W11_1A_0444_1D1_spx_l2b-v27-2026-232,1,4,2026-03-11T03:47:08,snapshot 0.958 visita 4 B1
+level2_2026W11_1A_0511_2D1_spx_l2b-v27-2026-232,1,4,2026-03-11T10:25:45,snapshot 0.960 visita 4 B1
+level2_2026W11_1A_0511_2D4_spx_l2b-v27-2026-232,4,4,2026-03-11T10:25:45,cobertura intermedia B4 visita 4
+level2_2026W11_1A_0511_4D1_spx_l2b-v27-2026-232,1,4,2026-03-11T10:30:03,snapshot 0.961 visita 4 B1
+level2_2026W11_1A_0539_1D1_spx_l2b-v27-2026-232,1,4,2026-03-11T13:33:43,refuerzo visita 4 B1 bloque 0539
+level2_2026W11_1A_0539_1D4_spx_l2b-v27-2026-232,4,4,2026-03-11T13:33:43,refuerzo visita 4 B4 bloque 0539
+level2_2026W11_1A_0539_3D1_spx_l2b-v27-2026-232,1,4,2026-03-11T13:38:01,snapshot 0.958 visita 4 B1
+level2_2026W11_1A_0539_3D4_spx_l2b-v27-2026-232,4,4,2026-03-11T13:38:01,snapshot 0.938 visita 4 B4
+level2_2026W11_1A_0556_1D4_spx_l2b-v27-2026-232,4,4,2026-03-11T15:13:21,snapshot 0.938 visita 4 B4
+level2_2026W11_1A_0556_1D1_spx_l2b-v27-2026-232,1,4,2026-03-11T15:13:21,cobertura visita 4 B1 bloque 0556
+level2_2026W11_1A_0556_4D4_spx_l2b-v27-2026-232,4,4,2026-03-11T15:19:50,snapshot 0.934 visita 4 B4
+level2_2026W11_1A_0570_1D1_spx_l2b-v27-2026-232,1,4,2026-03-11T16:49:49,cobertura visita 4 B1 bloque 0570
+level2_2026W11_1A_0570_1D4_spx_l2b-v27-2026-232,4,4,2026-03-11T16:49:49,cobertura visita 4 B4 bloque 0570
+level2_2026W11_1A_0587_1D1_spx_l2b-v27-2026-232,1,4,2026-03-11T18:29:20,cierre B1 visita 4
+level2_2026W11_1A_0587_1D4_spx_l2b-v27-2026-232,4,4,2026-03-11T18:29:20,snapshot 0.932 visita 4 B4
+level2_2026W11_2A_0501_2D5_spx_l2b-v27-2026-234,5,5,2026-03-15T00:48:14,refuerzo B5 visita 5
+level2_2026W11_2A_0501_2D2_spx_l2b-v27-2026-234,2,5,2026-03-15T00:48:14,snapshot 0.985 visita 5 B2
+level2_2026W11_2A_0501_4D2_spx_l2b-v27-2026-234,2,5,2026-03-15T00:52:31,refuerzo visita 5 B2 15-mar
+level2_2026W11_2A_0501_4D5_spx_l2b-v27-2026-234,5,5,2026-03-15T00:52:31,snapshot 0.950 visita 5 B5
+level2_2026W11_2A_0513_1D5_spx_l2b-v27-2026-234,5,5,2026-03-15T02:23:22,refuerzo visita 5 B5 15-mar
+level2_2026W11_2A_0513_2D2_spx_l2b-v27-2026-234,2,5,2026-03-15T02:25:31,snapshot 1.000 visita 5 B2
+level2_2026W11_2A_0513_2D5_spx_l2b-v27-2026-234,5,5,2026-03-15T02:25:31,cobertura B5 visita 5
+level2_2026W11_2A_0513_4D2_spx_l2b-v27-2026-234,2,5,2026-03-15T02:29:49,snapshot 0.983 visita 5 B2
+level2_2026W11_2A_0550_1D5_spx_l2b-v27-2026-234,5,5,2026-03-15T07:17:53,refuerzo visita 5 B5 15-mar
+level2_2026W11_2A_0550_1D2_spx_l2b-v27-2026-234,2,5,2026-03-15T07:17:53,refuerzo visita 5 B2 15-mar
+level2_2026W11_2A_0550_2D2_spx_l2b-v27-2026-234,2,5,2026-03-15T07:20:02,snapshot 0.978 visita 5 B2
+level2_2026W11_2A_0550_2D5_spx_l2b-v27-2026-234,5,5,2026-03-15T07:20:02,cobertura B5 visita 5
+level2_2026W12_1A_0311_1D5_spx_l2b-v27-2026-235,5,5,2026-03-17T16:19:25,refuerzo visita 5 B5 17-mar
+level2_2026W12_1A_0311_1D2_spx_l2b-v27-2026-235,2,5,2026-03-17T16:19:25,refuerzo visita 5 B2 17-mar
+level2_2026W12_1A_0311_2D2_spx_l2b-v27-2026-235,2,5,2026-03-17T16:21:33,snapshot 0.988 visita 5 B2
+level2_2026W12_1A_0311_2D5_spx_l2b-v27-2026-235,5,5,2026-03-17T16:21:33,cobertura 17-mar B5 visita 5
+level2_2026W12_1A_0311_4D2_spx_l2b-v27-2026-235,2,5,2026-03-17T16:25:51,snapshot 0.997 visita 5 B2
+level2_2026W12_1A_0311_4D5_spx_l2b-v27-2026-235,5,5,2026-03-17T16:25:51,refuerzo 17-mar B5 visita 5
+level2_2026W12_1A_0598_2D3_spx_l2b-v27-2026-235,3,5,2026-03-19T07:27:26,snapshot 0.970 visita 5 B3
+level2_2026W12_1A_0598_2D6_spx_l2b-v27-2026-235,6,5,2026-03-19T07:27:26,inicio B6 visita 5
+level2_2026W12_1A_0610_1D6_spx_l2b-v27-2026-235,6,5,2026-03-19T09:02:56,snapshot 0.940 visita 5 B6
+level2_2026W12_1A_0610_3D3_spx_l2b-v27-2026-235,3,5,2026-03-19T09:07:14,snapshot 0.961 visita 5 B3
+level2_2026W12_2A_0324_1D3_spx_l2b-v27-2026-235,3,5,2026-03-21T06:41:10,refuerzo visita 5 B3 21-mar
+level2_2026W12_2A_0324_1D6_spx_l2b-v27-2026-235,6,5,2026-03-21T06:41:10,refuerzo visita 5 B6 21-mar
+level2_2026W12_2A_0324_2D3_spx_l2b-v27-2026-235,3,5,2026-03-21T06:43:19,cobertura 21-mar B3 visita 5
+level2_2026W12_2A_0324_2D6_spx_l2b-v27-2026-235,6,5,2026-03-21T06:43:19,snapshot 0.932 visita 5 B6
+level2_2026W12_2A_0371_2D2_spx_l2b-v27-2026-235,2,5,2026-03-21T13:12:50,refuerzo visita 5 B2 21-mar
+level2_2026W12_2A_0371_3D5_spx_l2b-v27-2026-235,5,5,2026-03-21T13:14:59,reemplaza borde 0.667 en B5
+level2_2026W12_2A_0371_3D2_spx_l2b-v27-2026-235,2,5,2026-03-21T13:14:59,snapshot 0.994 visita 5 B2
+level2_2026W12_2A_0371_4D5_spx_l2b-v27-2026-235,5,5,2026-03-21T13:17:07,refuerzo visita 5 B5 21-mar
+level2_2026W12_2A_0496_1D2_spx_l2b-v27-2026-235,2,5,2026-03-22T05:28:36,snapshot 1.000 visita 5 B2
+level2_2026W12_2A_0496_1D5_spx_l2b-v27-2026-235,5,5,2026-03-22T05:28:36,cierre B5 visita 5
+level2_2026W12_2A_0520_1D3_spx_l2b-v27-2026-235,3,5,2026-03-22T08:44:20,refuerzo visita 5 B3 22-mar
+level2_2026W12_2A_0520_2D6_spx_l2b-v27-2026-235,6,5,2026-03-22T08:46:29,snapshot 0.935 visita 5 B6
+level2_2026W12_2A_0520_4D6_spx_l2b-v27-2026-235,6,5,2026-03-22T08:50:47,refuerzo visita 5 B6 22-mar
+level2_2026W12_2A_0520_4D3_spx_l2b-v27-2026-235,3,5,2026-03-22T08:50:47,snapshot 0.967 visita 5 B3
+level2_2026W13_1A_0129_1D6_spx_l2b-v27-2026-236,6,5,2026-03-23T15:41:56,refuerzo visita 5 B6 23-mar
+level2_2026W13_1A_0129_1D3_spx_l2b-v27-2026-236,3,5,2026-03-23T15:41:56,refuerzo visita 5 B3 23-mar
+level2_2026W13_1A_0129_3D6_spx_l2b-v27-2026-236,6,5,2026-03-23T15:46:14,cobertura 23-mar B6 visita 5
+level2_2026W13_1A_0129_3D3_spx_l2b-v27-2026-236,3,5,2026-03-23T15:46:14,snapshot 0.974 visita 5 B3
+level2_2026W13_1A_0549_1D6_spx_l2b-v27-2026-236,6,5,2026-03-25T21:27:44,snapshot 0.945 visita 5 B6
+level2_2026W13_1A_0549_1D3_spx_l2b-v27-2026-236,3,5,2026-03-25T21:27:44,snapshot 0.974 visita 5 B3
+level2_2026W15_2A_0137_1D6_spx_l2b-v27-2026-240,6,6,2026-04-10T00:43:17,unica B6 en visita 6
+level2_2026W15_2A_0137_1D3_spx_l2b-v27-2026-240,3,6,2026-04-10T00:43:17,unica B3 en visita 6
+level2_2026W19_1A_0046_1D3_spx_l2b-v27-2026-245,3,7,2026-05-04T03:11:42,ultima visita linea base B3
+level2_2026W19_1A_0046_1D6_spx_l2b-v27-2026-245,6,7,2026-05-04T03:11:42,ultima visita linea base B6
+level2_2026W19_1A_0216_1D3_spx_l2b-v27-2026-245,3,7,2026-05-04T14:34:15,snapshot 0.965 ultima visita B3
+level2_2026W19_1A_0216_1D6_spx_l2b-v27-2026-245,6,7,2026-05-04T14:34:15,ultima visita linea base B6
+level2_2026W19_1A_0326_1D6_spx_l2b-v27-2026-245,6,7,2026-05-04T21:05:55,ultima visita linea base B6
+level2_2026W19_1A_0326_1D3_spx_l2b-v27-2026-245,3,7,2026-05-04T21:05:55,ultima visita linea base B3
+level2_2026W19_1A_0403_1D6_spx_l2b-v27-2026-245,6,7,2026-05-05T01:59:28,fin absoluto linea base B6
+level2_2026W19_1A_0403_1D3_spx_l2b-v27-2026-245,3,7,2026-05-05T01:59:28,snapshot 0.949 fin linea base B3

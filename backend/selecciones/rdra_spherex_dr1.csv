@@ -1,0 +1,151 @@
+clave,banda,visita,fecha,motivo
+level2_2025W20_2D_0243_1D3_spx_l2b-v27-2026-198,3,1,2025-05-16T22:56:23,Inicio linea base snapshot fv 0.837
+level2_2025W20_2D_0243_2D3_spx_l2b-v27-2026-198,3,1,2025-05-16T22:58:32,Dither 2 B3 para fotometria de halo en V1
+level2_2025W20_2D_0243_1D6_spx_l2b-v27-2026-198,6,1,2025-05-16T22:56:23,Par simultaneo B6 de obs fv 0.837
+level2_2025W20_2D_0243_2D6_spx_l2b-v27-2026-198,6,1,2025-05-16T22:58:32,Dither 2 B6 simultaneo en V1
+level2_2025W21_1B_0329_1D3_spx_l2b-v27-2026-199,3,2,2025-05-20T16:37:27,Cubre V2 snapshot fv 0.835
+level2_2025W21_1B_0329_1D6_spx_l2b-v27-2026-199,6,2,2025-05-20T16:37:27,Par simultaneo B6 en V2 cercana a V1
+level2_2025W23_1C_0021_3D3_spx_l2b-v27-2026-200,3,3,2025-06-02T03:06:02,Fase intermedia snapshot fv 0.848
+level2_2025W23_1C_0021_4D3_spx_l2b-v27-2026-200,3,3,2025-06-02T03:08:11,Dither 4 B3 para halo en V3
+level2_2025W23_1C_0021_3D6_spx_l2b-v27-2026-200,6,3,2025-06-02T03:06:02,Par simultaneo B6 de obs fv 0.848
+level2_2025W23_1C_0021_4D6_spx_l2b-v27-2026-200,6,3,2025-06-02T03:08:11,Dither 4 B6 simultaneo en V3
+level2_2025W23_2B_0206_1D1_spx_l2b-v27-2026-201,1,4,2025-06-06T11:22:23,Par B1 de obs fv 0.826 en visita de 6 bandas
+level2_2025W23_2B_0206_2D1_spx_l2b-v27-2026-201,1,4,2025-06-06T11:24:32,Dither 2 B1 en V4 multibanda
+level2_2025W23_2B_0206_1D4_spx_l2b-v27-2026-201,4,4,2025-06-06T11:22:23,Visita 6 bandas snapshot fv 0.826
+level2_2025W23_2B_0206_2D4_spx_l2b-v27-2026-201,4,4,2025-06-06T11:24:32,Dither 2 B4 en V4 multibanda
+level2_2025W23_2B_0696_1D2_spx_l2b-v27-2026-201,2,4,2025-06-08T18:54:21,Visita 6 bandas snapshot fv 0.946
+level2_2025W24_1A_0123_1D2_spx_l2b-v27-2026-201,2,4,2025-06-09T12:50:34,Visita 6 bandas snapshot fv 0.947
+level2_2025W24_2D_0534_1D2_spx_l2b-v27-2026-202,2,4,2025-06-15T10:42:02,Visita 6 bandas snapshot fv 0.949
+level2_2025W24_1A_0123_1D5_spx_l2b-v27-2026-201,5,4,2025-06-09T12:50:34,Visita 6 bandas snapshot fv 0.949
+level2_2025W24_1A_0215_2D5_spx_l2b-v27-2026-201,5,4,2025-06-10T00:17:23,Visita 6 bandas snapshot fv 0.961
+level2_2025W24_2D_0534_1D5_spx_l2b-v27-2026-202,5,4,2025-06-15T10:42:02,Par B5 de obs fv 0.949 en V4
+level2_2025W24_1A_0631_3D3_spx_l2b-v27-2026-201,3,4,2025-06-12T06:08:25,Visita 6 bandas snapshot fv 0.891
+level2_2025W24_2D_0033_4D3_spx_l2b-v27-2026-202,3,4,2025-06-12T15:57:11,Visita 6 bandas snapshot fv 0.893
+level2_2025W23_2B_0130_1D6_spx_l2b-v27-2026-201,6,4,2025-06-06T03:19:32,Visita 6 bandas snapshot fv 0.848
+level2_2025W24_2D_0033_4D6_spx_l2b-v27-2026-202,6,4,2025-06-12T15:57:11,Par B6 de obs fv 0.893 en V4
+level2_2025W25_2A_0441_1D2_spx_l2b-v27-2026-213,2,5,2025-06-21T16:44:27,Inicio V5 B2 para halo
+level2_2025W26_1A_0506_2D2_spx_l2b-v27-2026-213,2,5,2025-06-25T13:40:23,Par B2 de obs fv 0.831 en V5
+level2_2025W26_2A_0170_4D2_spx_l2b-v27-2026-214,2,5,2025-06-27T04:52:43,Cierre V5 B2 cubre 6 dias
+level2_2025W25_2A_0441_1D5_spx_l2b-v27-2026-213,5,5,2025-06-21T16:44:27,Inicio V5 B5 simultaneo
+level2_2025W26_1A_0506_2D5_spx_l2b-v27-2026-213,5,5,2025-06-25T13:40:23,Snapshot fv 0.831 evita obs fv 0.48
+level2_2025W26_2A_0170_4D5_spx_l2b-v27-2026-214,5,5,2025-06-27T04:52:43,Cierre V5 B5 simultaneo
+level2_2025W27_2A_0243_1D1_spx_l2b-v27-2026-215,1,6,2025-07-04T12:57:52,Visita 4 bandas snapshot fv 0.826
+level2_2025W27_2A_0557_1D1_spx_l2b-v27-2026-215,1,6,2025-07-05T23:05:33,Segunda epoca B1 en V6
+level2_2025W27_2A_0243_1D4_spx_l2b-v27-2026-215,4,6,2025-07-04T12:57:52,Par B4 de obs fv 0.826 en V6
+level2_2025W27_2A_0557_1D4_spx_l2b-v27-2026-215,4,6,2025-07-05T23:05:33,Segunda epoca B4 simultanea en V6
+level2_2025W27_1A_0555_3D2_spx_l2b-v27-2026-214,2,6,2025-07-02T21:46:53,Dither 3 B2 evita fv 0.541
+level2_2025W27_1A_0555_4D2_spx_l2b-v27-2026-214,2,6,2025-07-02T21:49:02,Par B2 de obs fv 0.88 en V6
+level2_2025W27_1A_0555_3D5_spx_l2b-v27-2026-214,5,6,2025-07-02T21:46:53,Dither 3 B5 evita fv 0.583
+level2_2025W27_1A_0555_4D5_spx_l2b-v27-2026-214,5,6,2025-07-02T21:49:02,Visita 4 bandas snapshot fv 0.88
+level2_2025W29_1A_0141_2D1_spx_l2b-v27-2026-217,1,7,2025-07-14T17:27:38,Par B1 de fv 0.825 antes del hueco 87d
+level2_2025W29_1A_0676_1D1_spx_l2b-v27-2026-217,1,7,2025-07-17T10:39:02,Par B1 de fv 0.81 evita fv 0.451
+level2_2025W29_2A_0288_1D1_spx_l2b-v27-2026-219,1,7,2025-07-18T15:59:47,Par B1 de fv 0.81 antes del hueco 87d
+level2_2025W29_1A_0141_2D4_spx_l2b-v27-2026-217,4,7,2025-07-14T17:27:38,Borde pre-hueco snapshot fv 0.825
+level2_2025W29_1A_0676_1D4_spx_l2b-v27-2026-217,4,7,2025-07-17T10:39:02,Borde pre-hueco snapshot fv 0.81
+level2_2025W29_2A_0288_1D4_spx_l2b-v27-2026-219,4,7,2025-07-18T15:59:47,Borde pre-hueco snapshot fv 0.81
+level2_2025W42_2A_0244_2D1_spx_l2b-v27-2026-243,1,8,2025-10-17T14:47:03,Borde post-hueco snapshot fv 0.839
+level2_2025W42_2A_0513_1D1_spx_l2b-v27-2026-243,1,8,2025-10-18T23:16:45,Borde post-hueco snapshot fv 0.824
+level2_2025W42_2A_0526_2D1_spx_l2b-v27-2026-243,1,8,2025-10-19T00:57:25,Borde post-hueco snapshot fv 0.834
+level2_2025W42_2A_0244_2D4_spx_l2b-v27-2026-243,4,8,2025-10-17T14:47:03,Par B4 de obs fv 0.839 en V8
+level2_2025W42_2A_0513_1D4_spx_l2b-v27-2026-243,4,8,2025-10-18T23:16:45,Borde post-hueco snapshot fv 0.825
+level2_2025W42_2A_0617_2D4_spx_l2b-v27-2026-243,4,8,2025-10-19T10:46:26,Borde post-hueco snapshot fv 0.82
+level2_2025W43_2A_0464_1D1_spx_l2b-v27-2026-245,1,9,2025-10-25T13:23:18,Par B1 de obs fv 0.871 en V9
+level2_2025W43_2A_0464_2D1_spx_l2b-v27-2026-245,1,9,2025-10-25T13:25:27,Dither 2 B1 para halo en V9
+level2_2025W43_2A_0464_1D4_spx_l2b-v27-2026-245,4,9,2025-10-25T13:23:18,Fase entre V8 y V10 snapshot fv 0.871
+level2_2025W43_2A_0464_2D4_spx_l2b-v27-2026-245,4,9,2025-10-25T13:25:27,Dither 2 B4 simultaneo en V9
+level2_2025W45_2A_0430_1D1_spx_l2b-v27-2026-247,1,10,2025-11-08T11:34:53,Par B1 de obs fv 0.879 en V10
+level2_2025W45_2A_0458_1D1_spx_l2b-v27-2026-247,1,10,2025-11-08T14:49:21,Snapshot fv 0.89 en V10
+level2_2025W45_1A_0638_1D4_spx_l2b-v27-2026-247,4,10,2025-11-05T19:59:58,Snapshot fv 0.882 en V10
+level2_2025W45_2A_0430_1D4_spx_l2b-v27-2026-247,4,10,2025-11-08T11:34:53,Snapshot fv 0.879 en V10
+level2_2025W45_2A_0458_1D4_spx_l2b-v27-2026-247,4,10,2025-11-08T14:49:21,Snapshot fv 0.875 en V10
+level2_2025W46_2A_0163_2D1_spx_l2b-v27-2026-207,1,11,2025-11-14T06:06:42,Visita 4 bandas snapshot fv 0.9
+level2_2025W46_2A_0205_2D1_spx_l2b-v27-2026-207,1,11,2025-11-14T11:01:39,Visita 4 bandas snapshot fv 0.936
+level2_2025W47_2A_0033_1D1_spx_l2b-v27-2026-208,1,11,2025-11-20T15:17:02,Visita 4 bandas snapshot fv 0.939
+level2_2025W46_2A_0205_2D4_spx_l2b-v27-2026-207,4,11,2025-11-14T11:01:39,Par B4 de obs fv 0.936 en V11
+level2_2025W47_2A_0033_1D4_spx_l2b-v27-2026-208,4,11,2025-11-20T15:17:02,Visita 4 bandas snapshot fv 0.921
+level2_2025W47_1A_0388_1D2_spx_l2b-v27-2026-208,2,11,2025-11-18T17:35:08,Completa 4 bandas B2 en V11
+level2_2025W47_1A_0388_2D2_spx_l2b-v27-2026-208,2,11,2025-11-18T17:37:17,Dither 2 B2 en V11
+level2_2025W47_1A_0388_1D5_spx_l2b-v27-2026-208,5,11,2025-11-18T17:35:08,Completa 4 bandas B5 simultaneo en V11
+level2_2025W47_1A_0388_2D5_spx_l2b-v27-2026-208,5,11,2025-11-18T17:37:17,Dither 2 B5 simultaneo en V11
+level2_2025W48_2A_0693_3D2_spx_l2b-v27-2026-209,2,12,2025-11-30T11:35:51,Snapshot fv 0.949 en V12
+level2_2025W49_1A_0009_3D2_spx_l2b-v27-2026-209,2,12,2025-12-01T00:36:49,Snapshot fv 0.95 en V12
+level2_2025W49_1A_0280_3D2_spx_l2b-v27-2026-209,2,12,2025-12-02T05:58:02,Snapshot fv 0.947 en V12
+level2_2025W48_2A_0693_3D5_spx_l2b-v27-2026-209,5,12,2025-11-30T11:35:51,Par B5 de obs fv 0.949 en V12
+level2_2025W49_1A_0009_3D5_spx_l2b-v27-2026-209,5,12,2025-12-01T00:36:49,Par B5 de obs fv 0.95 en V12
+level2_2025W49_1A_0280_3D5_spx_l2b-v27-2026-209,5,12,2025-12-02T05:58:02,Par B5 de obs fv 0.947 en V12
+level2_2025W50_1A_0661_3D2_spx_l2b-v27-2026-209,2,13,2025-12-10T20:59:59,Snapshot fv 0.876 en V13
+level2_2025W50_2A_0259_1D2_spx_l2b-v27-2026-210,2,13,2025-12-12T08:41:34,Snapshot fv 0.884 en V13
+level2_2025W50_2A_0799_1D2_spx_l2b-v27-2026-210,2,13,2025-12-14T17:43:34,Snapshot fv 0.878 en V13
+level2_2025W50_1A_0661_2D5_spx_l2b-v27-2026-209,5,13,2025-12-10T20:57:48,Snapshot fv 0.878 en V13
+level2_2025W50_2A_0301_1D5_spx_l2b-v27-2026-210,5,13,2025-12-12T11:56:54,Snapshot fv 0.868 en V13
+level2_2025W50_2A_0333_3D5_spx_l2b-v27-2026-210,5,13,2025-12-12T15:17:26,Snapshot fv 0.879 en V13
+level2_2025W52_2A_0161_4D3_spx_l2b-v27-2026-211,3,14,2025-12-26T05:18:17,Par B3 de obs fv 0.832 en V14
+level2_2025W52_2A_0161_4D6_spx_l2b-v27-2026-211,6,14,2025-12-26T05:18:17,Cubre V14 cercana a V15 fv 0.832
+level2_2026W01_1A_0257_4D3_spx_l2b-v27-2026-211,3,15,2025-12-30T03:45:25,Snapshot fv 0.824 en V15
+level2_2026W01_2A_0426_3D3_spx_l2b-v27-2026-212,3,15,2026-01-03T13:41:13,Par B3 de obs fv 0.811 cierre V15
+level2_2026W01_1A_0257_4D6_spx_l2b-v27-2026-211,6,15,2025-12-30T03:45:25,Snapshot fv 0.823 en V15
+level2_2026W01_2A_0426_3D6_spx_l2b-v27-2026-212,6,15,2026-01-03T13:41:13,Snapshot fv 0.811 cierre V15
+level2_2026W03_1A_0304_3D3_spx_l2b-v27-2026-214,3,16,2026-01-13T09:54:54,Borde pre-hueco 99d dither 3 B3
+level2_2026W03_1A_0304_4D3_spx_l2b-v27-2026-214,3,16,2026-01-13T09:57:03,Par B3 de obs fv 0.802 antes hueco 99d
+level2_2026W03_1A_0304_3D6_spx_l2b-v27-2026-214,6,16,2026-01-13T09:54:54,Borde pre-hueco 99d dither 3 B6
+level2_2026W03_1A_0304_4D6_spx_l2b-v27-2026-214,6,16,2026-01-13T09:57:03,Borde pre-hueco 99d snapshot fv 0.802
+level2_2026W17_1B_0434_3D3_spx_l2b-v27-2026-242,3,17,2026-04-22T08:01:00,Borde post-hueco 99d snapshot fv 0.834
+level2_2026W17_1B_0517_4D3_spx_l2b-v27-2026-242,3,17,2026-04-22T19:31:07,Par B3 de obs fv 0.817 en V17
+level2_2026W17_1B_0434_3D6_spx_l2b-v27-2026-242,6,17,2026-04-22T08:01:00,Par B6 de obs fv 0.834 en V17
+level2_2026W17_1B_0517_4D6_spx_l2b-v27-2026-242,6,17,2026-04-22T19:31:07,Borde post-hueco 99d snapshot fv 0.817
+level2_2026W19_1A_0842_1D3_spx_l2b-v27-2026-245,3,18,2026-05-06T06:04:36,Par B3 de obs fv 0.823 en V18
+level2_2026W19_1A_0842_1D6_spx_l2b-v27-2026-245,6,18,2026-05-06T06:04:36,Cubre V18 cercana a V19 fv 0.823
+level2_2026W19_2A_1286_2D3_spx_l2b-v27-2026-245,3,19,2026-05-10T19:14:59,Cierre ciclo snapshot fv 0.834
+level2_2026W20_1A_0101_2D3_spx_l2b-v27-2026-246,3,19,2026-05-11T06:38:13,Cierre linea base snapshot fv 0.832
+level2_2026W19_2A_1286_2D6_spx_l2b-v27-2026-245,6,19,2026-05-10T19:14:59,Cierre ciclo snapshot fv 0.822
+level2_2026W20_1A_0101_2D6_spx_l2b-v27-2026-246,6,19,2026-05-11T06:38:13,Par B6 de obs fv 0.832 cierre V19
+level2_2025W20_2D_0243_3D3_spx_l2b-v27-2026-198,3,1,2025-05-16T23:00:41,Refuerzo dither 3 B3 en V1 inicio linea base
+level2_2025W20_2D_0243_3D6_spx_l2b-v27-2026-198,6,1,2025-05-16T23:00:41,Refuerzo dither 3 B6 simultaneo en V1
+level2_2025W21_1B_0329_2D3_spx_l2b-v27-2026-199,3,2,2025-05-20T16:39:36,Refuerzo V2 B3 de 1 a 2 imagenes
+level2_2025W21_1B_0329_2D6_spx_l2b-v27-2026-199,6,2,2025-05-20T16:39:36,Refuerzo V2 B6 simultaneo de 1 a 2
+level2_2025W23_2B_0206_3D1_spx_l2b-v27-2026-201,1,4,2025-06-06T11:26:41,Refuerzo V4 B1 dither 3 en visita 6 bandas
+level2_2025W24_1A_0215_2D2_spx_l2b-v27-2026-201,2,4,2025-06-10T00:17:23,Refuerzo V4 B2 par de snapshot fv 0.961
+level2_2025W23_2B_0130_1D3_spx_l2b-v27-2026-201,3,4,2025-06-06T03:19:32,Refuerzo V4 B3 par de snapshot fv 0.848
+level2_2025W23_2B_0206_3D4_spx_l2b-v27-2026-201,4,4,2025-06-06T11:26:41,Refuerzo V4 B4 dither 3 simultaneo en V4
+level2_2025W23_2B_0696_1D5_spx_l2b-v27-2026-201,5,4,2025-06-08T18:54:21,Refuerzo V4 B5 par de snapshot fv 0.946
+level2_2025W24_1A_0631_3D6_spx_l2b-v27-2026-201,6,4,2025-06-12T06:08:25,Refuerzo V4 B6 par de snapshot fv 0.891
+level2_2025W25_2A_0633_2D2_spx_l2b-v27-2026-213,2,5,2025-06-22T15:33:54,Refuerzo V5 B2 epoca intermedia Jun 22
+level2_2025W26_1A_0506_3D2_spx_l2b-v27-2026-213,2,5,2025-06-25T13:42:32,Refuerzo V5 B2 dither 3 evita fv 0.48
+level2_2025W25_2A_0633_2D5_spx_l2b-v27-2026-213,5,5,2025-06-22T15:33:54,Refuerzo V5 B5 epoca intermedia Jun 22
+level2_2025W26_1A_0506_3D5_spx_l2b-v27-2026-213,5,5,2025-06-25T13:42:32,Refuerzo V5 B5 dither 3 evita fv 0.48
+level2_2025W28_1B_0100_1D1_spx_l2b-v27-2026-215,1,6,2025-07-07T10:58:10,Refuerzo V6 B1 tercera epoca Jul 07
+level2_2025W27_1A_0331_2D2_spx_l2b-v27-2026-214,2,6,2025-07-01T16:23:53,Refuerzo V6 B2 epoca Jul 01 evita fv 0.541
+level2_2025W28_1B_0100_1D4_spx_l2b-v27-2026-215,4,6,2025-07-07T10:58:10,Refuerzo V6 B4 tercera epoca simultanea
+level2_2025W27_1A_0331_2D5_spx_l2b-v27-2026-214,5,6,2025-07-01T16:23:53,Refuerzo V6 B5 epoca Jul 01 evita fv 0.583
+level2_2025W30_1B_0289_1D1_spx_l2b-v27-2026-220,1,7,2025-07-22T14:35:50,Refuerzo V7 B1 borde exacto pre-hueco 87d
+level2_2025W30_1B_0289_1D4_spx_l2b-v27-2026-220,4,7,2025-07-22T14:35:50,Refuerzo V7 B4 borde exacto pre-hueco 87d
+level2_2025W42_2A_0617_2D1_spx_l2b-v27-2026-243,1,8,2025-10-19T10:46:26,Refuerzo V8 B1 par de snapshot fv 0.82
+level2_2025W42_2A_0526_2D4_spx_l2b-v27-2026-243,4,8,2025-10-19T00:57:25,Refuerzo V8 B4 par de snapshot fv 0.834
+level2_2025W43_2A_0320_1D1_spx_l2b-v27-2026-245,1,9,2025-10-24T22:45:34,Refuerzo V9 B1 primera epoca Oct 24
+level2_2025W43_2A_0320_1D4_spx_l2b-v27-2026-245,4,9,2025-10-24T22:45:34,Refuerzo V9 B4 primera epoca simultanea
+level2_2025W45_1A_0067_2D1_spx_l2b-v27-2026-247,1,10,2025-11-03T07:39:25,Refuerzo V10 B1 inicio Nov 03 par fv 0.86
+level2_2025W45_1A_0638_1D1_spx_l2b-v27-2026-247,1,10,2025-11-05T19:59:58,Refuerzo V10 B1 par de snapshot fv 0.882
+level2_2025W45_1A_0067_2D4_spx_l2b-v27-2026-247,4,10,2025-11-03T07:39:25,Refuerzo V10 B4 inicio Nov 03 snapshot fv 0.86
+level2_2025W46_2A_0592_1D1_spx_l2b-v27-2026-207,1,11,2025-11-16T08:36:10,Refuerzo V11 B1 epoca intermedia Nov 16
+level2_2025W47_1A_0388_3D2_spx_l2b-v27-2026-208,2,11,2025-11-18T17:39:26,Refuerzo V11 B2 dither 3 en V11
+level2_2025W46_2A_0163_2D4_spx_l2b-v27-2026-207,4,11,2025-11-14T06:06:42,Refuerzo V11 B4 par de snapshot fv 0.9
+level2_2025W46_2A_0592_1D4_spx_l2b-v27-2026-207,4,11,2025-11-16T08:36:10,Refuerzo V11 B4 epoca intermedia Nov 16
+level2_2025W47_1A_0388_3D5_spx_l2b-v27-2026-208,5,11,2025-11-18T17:39:26,Refuerzo V11 B5 dither 3 simultaneo en V11
+level2_2025W48_2A_0243_1D2_spx_l2b-v27-2026-209,2,12,2025-11-28T13:58:05,Refuerzo V12 B2 inicio Nov 28
+level2_2025W49_1A_0473_1D2_spx_l2b-v27-2026-209,2,12,2025-12-03T03:09:41,Refuerzo V12 B2 cierre Dic 03
+level2_2025W48_2A_0243_1D5_spx_l2b-v27-2026-209,5,12,2025-11-28T13:58:05,Refuerzo V12 B5 inicio Nov 28 simultaneo
+level2_2025W49_1A_0473_1D5_spx_l2b-v27-2026-209,5,12,2025-12-03T03:09:41,Refuerzo V12 B5 cierre Dic 03 simultaneo
+level2_2025W50_2A_0301_1D2_spx_l2b-v27-2026-210,2,13,2025-12-12T11:56:54,Refuerzo V13 B2 par de snapshot fv 0.868
+level2_2025W50_2A_0602_1D2_spx_l2b-v27-2026-210,2,13,2025-12-13T18:55:30,Refuerzo V13 B2 epoca intermedia Dic 13
+level2_2025W50_2A_0602_1D5_spx_l2b-v27-2026-210,5,13,2025-12-13T18:55:30,Refuerzo V13 B5 epoca intermedia Dic 13
+level2_2025W50_2A_0799_1D5_spx_l2b-v27-2026-210,5,13,2025-12-14T17:43:34,Refuerzo V13 B5 par de snapshot fv 0.878
+level2_2025W52_2A_0227_4D3_spx_l2b-v27-2026-211,3,14,2025-12-26T13:27:06,Refuerzo V14 B3 par de snapshot fv 0.818
+level2_2025W52_2A_0227_4D6_spx_l2b-v27-2026-211,6,14,2025-12-26T13:27:06,Refuerzo V14 B6 snapshot fv 0.818 de 1 a 2
+level2_2026W03_1A_0304_2D3_spx_l2b-v27-2026-214,3,16,2026-01-13T09:52:45,Refuerzo V16 B3 borde pre-hueco 99d
+level2_2026W03_1A_0304_2D6_spx_l2b-v27-2026-214,6,16,2026-01-13T09:52:45,Refuerzo V16 B6 borde pre-hueco 99d
+level2_2026W17_2A_0255_1D3_spx_l2b-v27-2026-243,3,17,2026-04-24T15:19:17,Refuerzo V17 B3 segunda epoca post-hueco 99d
+level2_2026W17_2A_0255_1D6_spx_l2b-v27-2026-243,6,17,2026-04-24T15:19:17,Refuerzo V17 B6 segunda epoca post-hueco 99d
+level2_2026W19_1A_0842_2D3_spx_l2b-v27-2026-245,3,18,2026-05-06T06:06:45,Refuerzo V18 B3 de 1 a 2 imagenes
+level2_2026W19_1A_0842_2D6_spx_l2b-v27-2026-245,6,18,2026-05-06T06:06:45,Refuerzo V18 B6 simultaneo de 1 a 2
+level2_2026W20_1A_0795_3D3_spx_l2b-v27-2026-246,3,19,2026-05-13T05:55:56,Refuerzo V19 B3 cierre ciclo snapshot fv 0.831
+level2_2026W20_1A_0795_3D6_spx_l2b-v27-2026-246,6,19,2026-05-13T05:55:56,Refuerzo V19 B6 cierre ciclo par de fv 0.831

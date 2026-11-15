@@ -11,11 +11,11 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import astropy.units as u
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.time import Time
-from astropy.wcs import WCS
+
+from astrometria import posicion_y_onda
 
 ESCALA_PX: float = 6.15  # segundos de arco por píxel
 ARCSEC_POR_RAD: float = 206264.806
@@ -29,7 +29,7 @@ FONDO_INT_PX: float = 6.0
 FONDO_EXT_PX: float = 10.0
 SUBMUESTREO: int = 10
 MIN_PIXELES_FONDO: int = 20
-MAX_FRACCION_PESO_PERDIDO: float = 0.30
+MAX_FRACCION_PESO_PERDIDO: float = 0.10
 
 # Banderas de exclusión de píxeles para fotometría y fondo (SOURCE se trata aparte).
 BANDERAS_EXCLUSION: frozenset[str] = frozenset({
@@ -107,7 +107,7 @@ def pesos_anillo_subpixel(
     """
     alto, ancho = forma
     pesos = np.zeros((alto, ancho), dtype=np.float64)
-    if radio_ext <= 0.0 or radio_ext <= radio_int:
+    if radio_ext <= 0.0 or radio_ext <= radio_int or not (math.isfinite(x) and math.isfinite(y)):
         return pesos
 
     x0 = max(0, int(math.floor(x - radio_ext - 1.0)))
@@ -178,7 +178,7 @@ def estimar_fondo_local(
     radio_ext: float = FONDO_EXT_PX,
 ) -> tuple[float, float, int, bool]:
     """
-    Estima el fondo local mediante mediana sigma-recortada (3σ, 3 iteraciones) en un anillo
+    Estima el fondo local mediante mediana sigma-recortada con MAD (3σ, 3 iteraciones) en un anillo
 
     Parameters
     ----------
@@ -193,7 +193,7 @@ def estimar_fondo_local(
 
     Returns
     -------
-    `tuple[float, float, int, bool]` `(fondo_mjysr, sigma_mjysr, n_pixeles, contaminado_por_source)`.
+    `tuple[float, float, int, bool]` `(fondo_mjysr, sigma_mad_mjysr, n_pixeles, contaminado_por_source)`.
     """
     alto, ancho = imagen_limpia.shape
     filas, cols = np.mgrid[0:alto, 0:ancho]
@@ -207,32 +207,34 @@ def estimar_fondo_local(
             if actuales.size == 0:
                 break
             med = float(np.median(actuales))
-            std = float(np.std(actuales))
-            if std <= 0.0:
+            sigma_mad = 1.4826 * float(np.median(np.abs(actuales - med)))
+            if sigma_mad <= 0.0:
                 break
-            filtrados = actuales[np.abs(actuales - med) <= 3.0 * std]
+            filtrados = actuales[np.abs(actuales - med) <= 3.0 * sigma_mad]
             if filtrados.size == actuales.size or filtrados.size == 0:
                 actuales = filtrados if filtrados.size > 0 else actuales
                 break
             actuales = filtrados
         if actuales.size == 0:
             return float("nan"), float("nan"), 0
-        return float(np.median(actuales)), float(np.std(actuales)), int(actuales.size)
+        med_final = float(np.median(actuales))
+        sigma_final = 1.4826 * float(np.median(np.abs(actuales - med_final)))
+        return med_final, sigma_final, int(actuales.size)
 
     # Primera pasada: excluyendo SOURCE y banderas malas.
     sin_source = sin_malos & ((banderas & mascara_source) == 0)
     vals_primarios = imagen_limpia[sin_source]
     if vals_primarios.size >= MIN_PIXELES_FONDO:
-        med, std, n_usados = _sigma_clip(vals_primarios)
+        med, sigma_mad, n_usados = _sigma_clip(vals_primarios)
         if n_usados >= MIN_PIXELES_FONDO and math.isfinite(med):
-            return med, std, n_usados, False
+            return med, sigma_mad, n_usados, False
 
     # Segunda pasada de respaldo: incluyendo píxeles SOURCE (nunca banderas de exclusión).
     vals_respaldo = imagen_limpia[sin_malos]
     if vals_respaldo.size >= MIN_PIXELES_FONDO:
-        med, std, n_usados = _sigma_clip(vals_respaldo)
+        med, sigma_mad, n_usados = _sigma_clip(vals_respaldo)
         if n_usados >= MIN_PIXELES_FONDO and math.isfinite(med):
-            return med, std, n_usados, True
+            return med, sigma_mad, n_usados, True
 
     return float("nan"), float("nan"), int(vals_respaldo.size), vals_respaldo.size > 0
 
@@ -263,7 +265,7 @@ def medir_apertura(
     `banderas`:np.ndarray | None Máscara de bits `uint32` por píxel.
     `mascara_exclusion`:np.uint32 Máscara de bits inválidos a excluir.
     `fondo_mjysr`:float Fondo local a restar en MJy/sr.
-    `sigma_fondo_mjysr`:float Dispersión del fondo local en MJy/sr.
+    `sigma_fondo_mjysr`:float Dispersión MAD del fondo local en MJy/sr.
     `n_anillo`:int Número de píxeles usados para estimar el fondo local.
     `radio_int`:float Radio interior en píxeles (`0.0` para apertura circular).
 
@@ -280,7 +282,12 @@ def medir_apertura(
     else:
         banderas_arr = banderas
 
-    malos = en_region & ((~np.isfinite(imagen)) | ((banderas_arr & mascara_exclusion) != 0))
+    varianza_mala = (
+        ((~np.isfinite(varianza)) | (varianza < 0.0))
+        if varianza is not None
+        else np.zeros(imagen.shape, dtype=bool)
+    )
+    malos = en_region & ((~np.isfinite(imagen)) | varianza_mala | ((banderas_arr & mascara_exclusion) != 0))
     buenos = en_region & (~malos)
 
     n_bad = int(np.sum(malos))
@@ -305,14 +312,14 @@ def medir_apertura(
     flujo_ujy = flujo_mjysr * MJY_SR_A_UJY
 
     if varianza is not None:
-        var_segura = np.where(np.isfinite(varianza), np.maximum(varianza, 0.0), 0.0)
-        var_fuente = float(np.sum(var_segura[buenos] * (pesos[buenos] ** 2)))
+        var_fuente = float(np.sum(varianza[buenos] * (pesos[buenos] ** 2)))
     else:
         var_fuente = 0.0
 
     n_eff = max(1, int(n_anillo))
+    # El fondo es una mediana, cuya varianza muestral asintótica para una normal es (π/2) * σ² / N.
     var_fondo = (
-        (sigma_fondo_mjysr ** 2) * (peso_usado ** 2) / n_eff
+        (math.pi / 2.0) * (sigma_fondo_mjysr ** 2) * (peso_usado ** 2) / n_eff
         if math.isfinite(sigma_fondo_mjysr)
         else 0.0
     )
@@ -330,19 +337,111 @@ def medir_apertura(
     }
 
 
-def _limpiar_float(valor: float) -> float | None:
+def _limpiar_float(valor: float, decimales: int | None = 6) -> float | None:
     """
     Convierte valores no finitos (`NaN`/`Inf`) a `None` para serialización JSON válida
 
     Parameters
     ----------
     `valor`:float Número en coma flotante a sanear.
+    `decimales`:int | None Decimales de redondeo, o `None` para conservar la precisión completa.
 
     Returns
     -------
-    `float | None` Valor redondeado o `None` si no es finito.
+    `float | None` Valor finito (redondeado si procede) o `None` si no es finito.
     """
-    return round(float(valor), 6) if math.isfinite(valor) else None
+    num = float(valor)
+    if not math.isfinite(num):
+        return None
+    return round(num, decimales) if decimales is not None else num
+
+
+def _sanear_wave_um(wave: dict[str, Any] | None) -> dict[str, float | None]:
+    """
+    Convierte a `None` cualquier valor no finito dentro del diccionario `wave_um`
+
+    Parameters
+    ----------
+    `wave`:dict[str, Any] | None Diccionario con claves `center`, `min`, `max`.
+
+    Returns
+    -------
+    `dict[str, float | None]` Diccionario saneado sin `NaN` ni `Inf`.
+    """
+    origen = wave if isinstance(wave, dict) else {"center": 0.0, "min": 0.0, "max": 0.0}
+    salida: dict[str, float | None] = {}
+    for clave in ("center", "min", "max"):
+        bruto = origen.get(clave)
+        salida[clave] = _limpiar_float(float(bruto), 4) if bruto is not None else None
+    return salida
+
+
+def _base_salida(metadatos: dict[str, Any] | None, x: float, y: float) -> dict[str, Any]:
+    """
+    Construye la cabecera común de una medida fotométrica con valores saneados para JSON
+
+    Parameters
+    ----------
+    `metadatos`:dict[str, Any] | None Metadatos de la exposición.
+    `x`:float Columna predicha (origen 0).
+    `y`:float Fila predicha (origen 0).
+
+    Returns
+    -------
+    `dict[str, Any]` Campos base de la medida.
+    """
+    meta = metadatos or {}
+    mjd_bruto = meta.get("mjd", 0.0)
+    mjd_sano = _limpiar_float(float(mjd_bruto), None) if mjd_bruto is not None else None
+    return {
+        "id": str(meta.get("id", "")),
+        "obs_id": str(meta.get("obs_id", "")),
+        "collection": str(meta.get("collection", "")),
+        "mjd": mjd_sano,
+        "date": str(meta.get("date", "")),
+        "band": int(meta.get("band", 0)),
+        "wave_um": _sanear_wave_um(meta.get("wave_um")),
+        "x": _limpiar_float(x, 4),
+        "y": _limpiar_float(y, 4),
+    }
+
+
+def _medida_invalida(
+    base_salida: dict[str, Any],
+    motivo: str,
+    contaminado: bool = False,
+) -> dict[str, Any]:
+    """
+    Construye un registro fotométrico marcado como inválido conservando el esquema completo
+
+    Parameters
+    ----------
+    `base_salida`:dict[str, Any] Campos base generados por `_base_salida`.
+    `motivo`:str Explicación legible para el campo `reason`.
+    `contaminado`:bool Si el fondo utilizó píxeles con bandera `SOURCE`.
+
+    Returns
+    -------
+    `dict[str, Any]` Medida no válida (`valid: False`, `halo_valid: False`) con flujos en `None`.
+    """
+    return {
+        **base_salida,
+        "flux_ujy": None,
+        "err_ujy": None,
+        "snr": None,
+        "bkg_mjysr": None,
+        "bkg_source_contaminated": contaminado,
+        "halo_flux_ujy": None,
+        "halo_err_ujy": None,
+        "halo_valid": False,
+        "aperture_px": RADIO_APERTURA_PX,
+        "n_bad": 0,
+        "lost_weight_fraction": 1.0,
+        "flags_or": 0,
+        "flag_names": [],
+        "valid": False,
+        "reason": motivo,
+    }
 
 
 def medir_imagen(
@@ -354,6 +453,8 @@ def medir_imagen(
     x: float,
     y: float,
     metadatos: dict[str, Any] | None = None,
+    halo_px: tuple[float, float] = (HALO_INT_PX, HALO_EXT_PX),
+    fondo_px: tuple[float, float] = (FONDO_INT_PX, FONDO_EXT_PX),
 ) -> dict[str, Any]:
     """
     Ejecuta la fotometría forzada completa (fondo local, apertura central y halo) sobre un recorte
@@ -368,47 +469,21 @@ def medir_imagen(
     `x`:float Columna predicha del objetivo (origen 0).
     `y`:float Fila predicha del objetivo (origen 0).
     `metadatos`:dict[str, Any] | None Metadatos opcionales (`id`, `obs_id`, `collection`, `mjd`, `date`, `band`, `wave_um`).
+    `halo_px`:tuple[float, float] Radios interior y exterior del anillo de halo (fuentes saturadas: más afuera).
+    `fondo_px`:tuple[float, float] Radios interior y exterior del anillo de fondo local.
 
     Returns
     -------
     `dict[str, Any]` Registro fotométrico completo conforme al contrato B2.
     """
-    meta = metadatos or {}
-    base_salida: dict[str, Any] = {
-        "id": str(meta.get("id", "")),
-        "obs_id": str(meta.get("obs_id", "")),
-        "collection": str(meta.get("collection", "")),
-        "mjd": float(meta.get("mjd", 0.0)),
-        "date": str(meta.get("date", "")),
-        "band": int(meta.get("band", 0)),
-        "wave_um": meta.get("wave_um", {"center": 0.0, "min": 0.0, "max": 0.0}),
-        "x": round(float(x), 4),
-        "y": round(float(y), 4),
-    }
-
+    base_salida = _base_salida(metadatos, x, y)
     mascara_exclusion, mascara_source = construir_mascaras_banderas(bits_cabecera)
     banderas_u32 = banderas.astype(np.uint32, copy=False)
 
-    # Verificar que ni la apertura ni el anillo exterior de fondo (10 px) se salgan del recorte.
-    if not region_dentro_de_recorte(imagen.shape, x, y, FONDO_EXT_PX):
-        return {
-            **base_salida,
-            "flux_ujy": None,
-            "err_ujy": None,
-            "snr": None,
-            "bkg_mjysr": None,
-            "bkg_source_contaminated": False,
-            "halo_flux_ujy": None,
-            "halo_err_ujy": None,
-            "halo_valid": False,
-            "aperture_px": RADIO_APERTURA_PX,
-            "n_bad": 0,
-            "lost_weight_fraction": 1.0,
-            "flags_or": 0,
-            "flag_names": [],
-            "valid": False,
-            "reason": "la apertura o el anillo de fondo se sale del recorte",
-        }
+    # Verificar que ni la apertura, ni el halo ni el anillo de fondo se salgan del recorte.
+    radio_max = max(RADIO_APERTURA_PX, halo_px[1], fondo_px[1])
+    if not region_dentro_de_recorte(imagen.shape, x, y, radio_max):
+        return _medida_invalida(base_salida, "la apertura, el halo o el anillo de fondo se sale del recorte")
 
     imagen_limpia = imagen.astype(np.float64) - zodi.astype(np.float64)
     fondo_mjysr, sigma_fondo, n_anillo, contaminado = estimar_fondo_local(
@@ -418,27 +493,12 @@ def medir_imagen(
         y=y,
         mascara_exclusion=mascara_exclusion,
         mascara_source=mascara_source,
+        radio_int=fondo_px[0],
+        radio_ext=fondo_px[1],
     )
 
     if not math.isfinite(fondo_mjysr) or n_anillo < MIN_PIXELES_FONDO:
-        return {
-            **base_salida,
-            "flux_ujy": None,
-            "err_ujy": None,
-            "snr": None,
-            "bkg_mjysr": None,
-            "bkg_source_contaminated": contaminado,
-            "halo_flux_ujy": None,
-            "halo_err_ujy": None,
-            "halo_valid": False,
-            "aperture_px": RADIO_APERTURA_PX,
-            "n_bad": 0,
-            "lost_weight_fraction": 1.0,
-            "flags_or": 0,
-            "flag_names": [],
-            "valid": False,
-            "reason": "fondo local sin suficientes píxeles válidos (< 20)",
-        }
+        return _medida_invalida(base_salida, "fondo local sin suficientes píxeles válidos (< 20)", contaminado=contaminado)
 
     ap = medir_apertura(
         imagen=imagen_limpia,
@@ -457,14 +517,14 @@ def medir_imagen(
         imagen=imagen_limpia,
         x=x,
         y=y,
-        radio=HALO_EXT_PX,
+        radio=halo_px[1],
         varianza=varianza,
         banderas=banderas_u32,
         mascara_exclusion=mascara_exclusion,
         fondo_mjysr=fondo_mjysr,
         sigma_fondo_mjysr=sigma_fondo,
         n_anillo=n_anillo,
-        radio_int=HALO_INT_PX,
+        radio_int=halo_px[0],
     )
 
     flags_or = int(ap["flags_or"])
@@ -478,14 +538,23 @@ def medir_imagen(
         ap["lost_weight_fraction"] <= MAX_FRACCION_PESO_PERDIDO
         and math.isfinite(ap["flux_ujy"])
         and math.isfinite(ap["err_ujy"])
+        and ap["err_ujy"] > 0.0
+        and math.isfinite(ap["snr"])
     )
     halo_valido = (
         halo["lost_weight_fraction"] <= MAX_FRACCION_PESO_PERDIDO
         and math.isfinite(halo["flux_ujy"])
         and math.isfinite(halo["err_ujy"])
+        and halo["err_ujy"] > 0.0
+        and math.isfinite(halo["snr"])
     )
 
-    motivo = "" if apertura_valida else "saturado o con píxeles malos en la apertura"
+    if apertura_valida:
+        motivo = ""
+    elif ap["lost_weight_fraction"] > MAX_FRACCION_PESO_PERDIDO:
+        motivo = "saturado o con píxeles malos en la apertura"
+    else:
+        motivo = "error nulo o SNR no finito en la apertura"
 
     return {
         **base_salida,
@@ -499,7 +568,7 @@ def medir_imagen(
         "halo_valid": halo_valido,
         "aperture_px": RADIO_APERTURA_PX,
         "n_bad": int(ap["n_bad"]),
-        "lost_weight_fraction": round(float(ap["lost_weight_fraction"]), 6),
+        "lost_weight_fraction": _limpiar_float(ap["lost_weight_fraction"]),
         "flags_or": flags_or,
         "flag_names": flag_names,
         "valid": apertura_valida,
@@ -513,6 +582,7 @@ def medir_hdul(
     fila: Any,
     base: SkyCoord,
     coleccion: str,
+    **anillos: tuple[float, float],
 ) -> dict[str, Any]:
     """
     Extrae las extensiones de un FITS SPHEREx abierto y ejecuta la fotometría forzada
@@ -524,13 +594,12 @@ def medir_hdul(
     `fila`:Any Fila SIA asociada a la imagen.
     `base`:SkyCoord Coordenada astrométrica de referencia del objetivo.
     `coleccion`:str Nombre de la colección de IRSA.
+    `anillos`:tuple[float, float] Opcional: `halo_px` y `fondo_px` (ver `medir_imagen`).
 
     Returns
     -------
     `dict[str, Any]` Medida fotométrica completa para esa exposición.
     """
-    from generar_snapshots import posicion_y_onda
-
     cab = h["IMAGE"].header
     info = posicion_y_onda(h, base, cab)
     mjd: float = info["mjd"]
@@ -543,20 +612,25 @@ def medir_hdul(
         "id": Path(url.split("?")[0]).stem,
         "obs_id": str(cab.get("OBSID", "")),
         "collection": coleccion,
-        "mjd": mjd,
-        "date": Time(mjd, format="mjd").isot[:19],
+        "mjd": _limpiar_float(mjd, None),
+        "date": Time(mjd, format="mjd").isot[:19] if math.isfinite(mjd) else "",
         "band": banda,
         "wave_um": {
-            "center": round(lam, 4),
-            "min": round(lam - banda_um / 2.0, 4),
-            "max": round(lam + banda_um / 2.0, 4),
+            "center": _limpiar_float(lam, 4),
+            "min": _limpiar_float(lam - banda_um / 2.0, 4),
+            "max": _limpiar_float(lam + banda_um / 2.0, 4),
         },
     }
 
+    for ext in ("ZODI", "VARIANCE", "FLAGS"):
+        if ext not in h or h[ext].data is None:
+            base_salida = _base_salida(metadatos, info["px"], info["py"])
+            return _medida_invalida(base_salida, f"falta la extensión {ext}")
+
     imagen = h["IMAGE"].data.astype(np.float64)
-    zodi = h["ZODI"].data.astype(np.float64) if "ZODI" in h else np.zeros_like(imagen)
-    varianza = h["VARIANCE"].data.astype(np.float64) if "VARIANCE" in h else np.zeros_like(imagen)
-    banderas = h["FLAGS"].data.astype("<i4").view("<u4") if "FLAGS" in h else np.zeros(imagen.shape, dtype=np.uint32)
+    zodi = h["ZODI"].data.astype(np.float64)
+    varianza = h["VARIANCE"].data.astype(np.float64)
+    banderas = h["FLAGS"].data.astype("<i4").view("<u4")
 
     return medir_imagen(
         imagen=imagen,
@@ -567,4 +641,5 @@ def medir_hdul(
         x=info["px"],
         y=info["py"],
         metadatos=metadatos,
+        **anillos,
     )

@@ -5,3 +5,4 @@ numpy>=1.26
 astroquery>=0.4.11
 requests>=2.32
 pytest>=8.0
+httpx>=0.27
