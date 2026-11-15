@@ -1,4 +1,5 @@
 import base64
+import copy
 import json
 import logging
 import os
@@ -75,7 +76,16 @@ DEFAULT_FLAG_BITS = {
     "NONLINEAR": 15,
     "PERSIST": 17,
     "OUTLIER": 19,
+    "CROSSTALK": 20,
     "SOURCE": 21,
+    "GHOST": 22,
+    "GHOST_FPA": 23,
+    "GHOST_EXT": 24,
+    "STREAK": 25,
+    "BLOOM": 26,
+    "SNOWBALL": 27,
+    "HALO": 28,
+    "SATELLITE_HALO": 29,
 }
 
 
@@ -87,7 +97,7 @@ def encode_array_b64(arr: np.ndarray, dtype: str) -> str:
 def mjd_to_iso_date(mjd: float) -> str:
     """Fecha ISO de un MJD; cadena vacía si no es válido (nunca se inventa la fecha de hoy)."""
     try:
-        return Time(mjd, format="mjd", scale="utc").isot[:10]
+        return Time(mjd, format="mjd", scale="utc").isot[:19]
     except ValueError as error:
         logger.warning("MJD inválido (%s): %s", mjd, error)
         return ""
@@ -136,7 +146,7 @@ def extract_cutout_from_fits(
         q_x, q_y = cutout.wcs.world_to_pixel(coord)
         # MJD-AVG es el instante medio de la exposición en los FITS de SPHEREx.
         mjd = float(header.get("MJD-AVG", header.get("MJD-OBS", header.get("MJD", 60900.5))))
-        date_str = str(header.get("DATE-OBS", mjd_to_iso_date(mjd)))[:10]
+        date_str = str(header.get("DATE-OBS", mjd_to_iso_date(mjd)))[:19]
         # Los FITS de SPHEREx no traen BAND: la banda es el número de detector (1 a 6).
         band = int(header.get("BAND", header.get("DETECTOR", 1)))
         detector = int(header.get("DETECTOR", band))
@@ -150,6 +160,7 @@ def extract_cutout_from_fits(
 
         return {
             "id": fits_path.stem,
+            "collection": "fits_local",
             "mjd": mjd,
             "date": date_str,
             "band": band,
@@ -194,18 +205,24 @@ def load_snapshots() -> list[dict]:
                 continue
             with path.open(encoding="utf-8") as fh:
                 data = json.load(fh)
+            if not isinstance(data, dict):
+                raise TypeError(f"Se esperaba objeto JSON y se recibió {type(data).__name__}")
             q = data["query"]
+            if not isinstance(q, dict):
+                raise TypeError(f"Se esperaba 'query' como objeto JSON y se recibió {type(q).__name__}")
+            target_obj = data.get("target")
+            target_id = target_obj.get("id", path.stem) if isinstance(target_obj, dict) else path.stem
             entrada = {
                 "path": path,
                 "collection": q["collection"],
                 "ra": float(q["ra"]),
                 "dec": float(q["dec"]),
-                "target": data.get("target", {}).get("id", path.stem),
+                "target": target_id,
                 "data": data,
             }
             _CACHE_SNAPSHOTS[path] = (modificado, entrada)
             index.append(entrada)
-        except (OSError, KeyError, ValueError) as error:
+        except (OSError, KeyError, ValueError, TypeError) as error:
             logger.warning("Snapshot ignorado (%s): %s", path.name, error)
     return index
 
@@ -224,6 +241,8 @@ def load_photometry_files() -> list[dict]:
                 continue
             with path.open(encoding="utf-8") as fh:
                 data = json.load(fh)
+            if not isinstance(data, dict):
+                raise TypeError(f"Se esperaba objeto JSON y se recibió {type(data).__name__}")
             entrada = {
                 "path": path,
                 "target": str(data.get("target", "")),
@@ -233,35 +252,40 @@ def load_photometry_files() -> list[dict]:
             }
             _CACHE_FOTOMETRIA[path] = (modificado, entrada)
             entries.append(entrada)
-        except (OSError, KeyError, ValueError) as error:
+        except (OSError, KeyError, ValueError, TypeError) as error:
             logger.warning("Fotometría ignorada (%s): %s", path.name, error)
     return entries
 
 
-def validate_photometry_params(target: str, collection: str) -> tuple[str, str]:
-    """Valida target y collection contra listas blancas estrictas antes de construir rutas."""
-    clean_target = target.strip()
+def validate_collection_param(collection: str) -> str:
+    """Valida collection contra la lista blanca estricta."""
     clean_collection = collection.strip()
-    if clean_target not in VALID_TARGETS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Objetivo no permitido: '{target}'. Valores válidos: {', '.join(sorted(VALID_TARGETS))}.",
-        )
     if clean_collection not in VALID_COLLECTIONS:
         raise HTTPException(
             status_code=400,
             detail=f"Colección no permitida: '{collection}'. Valores válidos: {', '.join(sorted(VALID_COLLECTIONS))}.",
         )
-    return clean_target, clean_collection
+    return clean_collection
+
+
+def validate_photometry_params(target: str, collection: str) -> tuple[str, str]:
+    """Valida target y collection contra listas blancas estrictas antes de construir rutas."""
+    clean_target = target.strip()
+    if clean_target not in VALID_TARGETS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Objetivo no permitido: '{target}'. Valores válidos: {', '.join(sorted(VALID_TARGETS))}.",
+        )
+    return clean_target, validate_collection_param(collection)
 
 
 def find_snapshots(ra: float, dec: float, collection: str) -> list[dict]:
-    """Snapshots cercanos a la posición pedida; 'spherex_both' o 'both' junta DR1 y QR3."""
-    wanted = None if collection in ("both", "spherex_both") else {collection}
+    """Snapshots cercanos a la posición pedida; 'spherex_both' o 'both' junta SOLO DR1 y QR3."""
+    wanted = {"spherex_dr1", "spherex_qr3"} if collection in ("both", "spherex_both") else {collection}
     pedido = SkyCoord(ra=ra * u.deg, dec=dec * u.deg, frame="icrs")
     found = []
     for snap in load_snapshots():
-        if wanted is not None and snap["collection"] not in wanted:
+        if snap["collection"] not in wanted:
             continue
         centro = SkyCoord(ra=snap["ra"] * u.deg, dec=snap["dec"] * u.deg, frame="icrs")
         if pedido.separation(centro).arcsec <= SNAPSHOT_MATCH_ARCSEC:
@@ -420,16 +444,45 @@ def get_photometry(
                 detail=f"Sin datos de fotometría para '{clean_target}' en spherex_dr1 ni spherex_qr3.",
             )
         if len(seleccionadas) == 1:
-            return seleccionadas[0]["data"]
+            copia = copy.deepcopy(seleccionadas[0]["data"])
+            col_incluida = seleccionadas[0]["collection"]
+            copia["collection"] = "spherex_both"
+            notas = list(copia.get("notes", []))
+            notas.insert(
+                0,
+                f"Combinación de fotometría ({col_incluida}) ordenada por MJD; no hay datos en la otra colección.",
+            )
+            copia["notes"] = notas
+            return copia
 
-        base = dict(seleccionadas[0]["data"])
+        radios_iguales = (
+            len({tuple(item["data"].get("halo_px", [])) for item in seleccionadas}) == 1
+            and len({tuple(item["data"].get("annulus_px", [])) for item in seleccionadas}) == 1
+            and len({item["data"].get("aperture_px") for item in seleccionadas}) == 1
+        )
+        base = copy.deepcopy(seleccionadas[0]["data"])
         medidas = []
         notas = []
         for item in seleccionadas:
-            medidas.extend(item["data"].get("measurements", []))
-            notas.extend(item["data"].get("notes", []))
-        medidas.sort(key=lambda m: float(m.get("mjd", 0.0)))
+            datos_item = item["data"]
+            notas.extend(copy.deepcopy(datos_item.get("notes", [])))
+            for m in datos_item.get("measurements", []):
+                medida = copy.deepcopy(m)
+                if not radios_iguales:
+                    if "halo_px" in datos_item:
+                        medida["halo_px"] = list(datos_item["halo_px"])
+                    if "annulus_px" in datos_item:
+                        medida["annulus_px"] = list(datos_item["annulus_px"])
+                medidas.append(medida)
+
+        medidas.sort(key=lambda m: float(m["mjd"]) if m.get("mjd") is not None else 0.0)
         colecciones_unidas = " + ".join(sorted(item["collection"] for item in seleccionadas))
+        if not radios_iguales:
+            notas.insert(
+                0,
+                "Los archivos combinados usan radios distintos (aperture_px/halo_px/annulus_px); "
+                "cada medida incluye sus propios campos halo_px y annulus_px.",
+            )
         notas.insert(0, f"Combinación de fotometría ({colecciones_unidas}) ordenada por MJD.")
         base["collection"] = "spherex_both"
         base["generated_at"] = max(item["generated_at"] for item in seleccionadas)
@@ -437,15 +490,11 @@ def get_photometry(
         base["measurements"] = medidas
         return base
 
-    ruta_esperada = (FOTOMETRIA_DIR / f"{clean_target}_{clean_collection}.json").resolve()
-    if ruta_esperada.parent != FOTOMETRIA_DIR.resolve():
-        raise HTTPException(status_code=400, detail="Ruta de fotometría inválida.")
-
     for item in entries:
         if item["collection"] == clean_collection:
             return item["data"]
 
-    disponibles = sorted({e["collection"] for e in entries})
+    disponibles = sorted(e["collection"] for e in entries)
     extra = f" Colecciones disponibles: {', '.join(disponibles)}." if disponibles else ""
     raise HTTPException(
         status_code=404,
@@ -461,10 +510,12 @@ def get_frames(
     band: Optional[int] = Query(None, ge=0, le=6),
     collection: str = Query("spherex_qr3"),
 ):
+    clean_collection = validate_collection_param(collection)
+
     # 1) Datos reales ya verificados (snapshots) si la posición coincide con un objetivo guardado.
-    snaps = find_snapshots(ra, dec, collection)
+    snaps = find_snapshots(ra, dec, clean_collection)
     if snaps:
-        response = snapshot_response(snaps, ra, dec, size, collection)
+        response = snapshot_response(snaps, ra, dec, size, clean_collection)
         if band:
             response["frames"] = [f for f in response["frames"] if f["band"] == band]
         return response
@@ -476,7 +527,7 @@ def get_frames(
         raise HTTPException(
             status_code=404,
             detail=(
-                f"Sin datos guardados en {collection} para esta posición; "
+                f"Sin datos guardados en {clean_collection} para esta posición; "
                 f"hay datos en: {', '.join(disponibles)}."
             ),
         )
@@ -502,7 +553,7 @@ def get_frames(
                 "ra": ra,
                 "dec": dec,
                 "size_arcsec": size,
-                "collection": collection,
+                "collection": clean_collection,
             },
             "pixel_scale_arcsec": PIXEL_SCALE_ARCSEC,
             "provenance": "cached",
@@ -517,9 +568,9 @@ def get_frames(
         }
 
     raise HTTPException(
-        status_code=503,
+        status_code=404,
         detail=(
-            "Backend operativo, pero no hay datos guardados para esta posición. Los datos reales "
+            "Sin datos guardados para esta posición en ninguna colección; los datos reales "
             "salen de backend/snapshots/ (se generan con generar_snapshots.py); #sim=1 es solo el simulador de desarrollo."
         ),
     )

@@ -1,0 +1,151 @@
+clave,banda,visita,fecha,motivo
+level2_2025W36_1A_0095_1D1_spx_l2b-v27-2026-232,1,1,2025-09-01T10:04:17,en_snapshot fv=0.945 lam=1.0685 cubre 09-01 10h
+level2_2025W36_1A_0155_1D1_spx_l2b-v27-2026-232,1,1,2025-09-01T16:29:34,en_snapshot fv=0.941 lam=1.1195 cubre 09-01 16h
+level2_2025W36_1A_0233_3D1_spx_l2b-v27-2026-232,1,1,2025-09-02T00:45:32,en_snapshot fv=0.949 lam=0.7645 cubre 09-02 00h
+level2_2025W36_1A_0446_1D1_spx_l2b-v27-2026-232,1,1,2025-09-02T23:27:24,cubre obs_id 0446 09-02 23h dither 1
+level2_2025W36_1A_0446_4D1_spx_l2b-v27-2026-232,1,1,2025-09-02T23:33:51,segundo dither en 0446 09-02 23h para cobertura V1
+level2_2025W36_1A_0606_1D1_spx_l2b-v27-2026-232,1,1,2025-09-03T17:22:23,cubre obs_id 0606 09-03 17h dither 1
+level2_2025W36_1A_0606_4D1_spx_l2b-v27-2026-232,1,1,2025-09-03T17:28:50,segundo dither en 0606 09-03 17h para cobertura V1
+level2_2025W36_1A_0663_3D1_spx_l2b-v27-2026-232,1,1,2025-09-03T23:57:49,en_snapshot fv=0.944 lam=1.0194 cubre 09-03 23h
+level2_2025W36_1A_0677_1D1_spx_l2b-v27-2026-232,1,1,2025-09-04T01:35:48,en_snapshot fv=0.944 lam=0.9432 cubre 09-04
+level2_2026W10_1A_0445_1D1_spx_l2b-v27-2026-229,1,5,2026-03-04T07:54:38,cubre 03-04 dither 1
+level2_2026W10_1A_0445_4D1_spx_l2b-v27-2026-229,1,5,2026-03-04T08:01:04,segundo dither en 0445 03-04 para muestreo de lambda
+level2_2026W10_2B_0137_1D1_spx_l2b-v27-2026-231,1,5,2026-03-06T05:30:54,cubre 03-06 dither 1
+level2_2026W10_2B_0137_4D1_spx_l2b-v27-2026-231,1,5,2026-03-06T05:37:21,segundo dither en 0137 03-06 para muestreo de lambda
+level2_2026W10_2B_0591_3D1_spx_l2b-v27-2026-231,1,5,2026-03-08T16:12:52,cubre obs_id 0591 03-08 16h
+level2_2026W10_2B_0626_2D1_spx_l2b-v27-2026-231,1,5,2026-03-08T21:07:21,en_snapshot fv=0.938 lam=1.0602 pareada con V1
+level2_2026W11_1A_0285_1D1_spx_l2b-v27-2026-232,1,5,2026-03-10T10:32:45,en_snapshot fv=0.942 lam=0.7757 pareada con V1
+level2_2026W11_1A_0645_1D1_spx_l2b-v27-2026-232,1,5,2026-03-12T00:03:00,unica imagen del 03-12 y cierre temporal B1
+level2_2025W37_1A_0068_1D2_spx_l2b-v27-2026-235,2,2,2025-09-08T06:36:11,en_snapshot fv=0.963 lam=1.4412 cubre 09-08 06h
+level2_2025W37_1A_0068_3D2_spx_l2b-v27-2026-235,2,2,2025-09-08T06:40:29,en_snapshot fv=0.963 lam=1.5117 segundo dither 0068
+level2_2025W37_1A_0124_1D2_spx_l2b-v27-2026-235,2,2,2025-09-08T13:11:36,en_snapshot fv=0.967 lam=1.1054 cubre 09-08 13h
+level2_2025W37_1A_0366_2D2_spx_l2b-v27-2026-235,2,2,2025-09-09T20:09:37,en_snapshot fv=0.966 lam=1.2141 cubre 09-09 20h
+level2_2025W37_1A_0379_1D2_spx_l2b-v27-2026-235,2,2,2025-09-09T21:45:48,cubre obs_id 0379 09-09 21h dither 1
+level2_2025W37_1A_0379_4D2_spx_l2b-v27-2026-235,2,2,2025-09-09T21:52:15,segundo dither en 0379 09-09 21h
+level2_2025W37_1A_0496_1D2_spx_l2b-v27-2026-235,2,2,2025-09-10T12:26:34,en_snapshot fv=0.961 lam=1.5852 cubre 09-10 12h
+level2_2025W37_1A_0553_1D2_spx_l2b-v27-2026-235,2,2,2025-09-10T18:56:57,en_snapshot fv=0.961 lam=1.4303 unica de 0553
+level2_2026W09_2A_0503_2D2_spx_l2b-v27-2026-229,2,5,2026-03-01T04:57:53,en_snapshot fv=0.961 lam=1.2991 cubre 03-01
+level2_2026W09_2A_0503_4D2_spx_l2b-v27-2026-229,2,5,2026-03-01T05:02:11,segundo dither en 0503 03-01
+level2_2026W10_1A_0092_2D2_spx_l2b-v27-2026-229,2,5,2026-03-02T10:17:35,en_snapshot fv=0.962 lam=1.427 pareada con V2
+level2_2026W10_1A_0602_1D2_spx_l2b-v27-2026-229,2,5,2026-03-05T05:05:06,cubre obs_id 0602 03-05 05h
+level2_2026W10_1A_0639_3D2_spx_l2b-v27-2026-229,2,5,2026-03-05T10:01:42,cubre obs_id 0639 03-05 10h
+level2_2026W10_2B_0340_1D2_spx_l2b-v27-2026-231,2,5,2026-03-07T07:35:10,segundo dither en 0340 03-07
+level2_2026W10_2B_0340_3D2_spx_l2b-v27-2026-231,2,5,2026-03-07T07:39:27,en_snapshot fv=0.963 lam=1.2018 pareada con V2
+level2_2026W11_1A_0042_1D2_spx_l2b-v27-2026-232,2,5,2026-03-09T05:12:29,en_snapshot fv=0.961 lam=1.2598 unica del 03-09
+level2_2025W37_2A_0051_1D3_spx_l2b-v27-2026-236,3,2,2025-09-11T16:15:33,unica imagen B3 en V2 y en_snapshot fv=0.946
+level2_2025W38_1A_0538_2D3_spx_l2b-v27-2026-237,3,3,2025-09-17T02:35:42,en_snapshot fv=0.952 lam=1.6591 cubre 09-17 02h
+level2_2025W38_1A_0691_1D3_spx_l2b-v27-2026-237,3,3,2025-09-17T22:07:35,en_snapshot fv=0.954 lam=1.7361 cubre 09-17 22h
+level2_2025W38_1A_0738_4D3_spx_l2b-v27-2026-237,3,3,2025-09-18T04:45:30,en_snapshot fv=0.946 lam=2.3018 cubre 09-18 04h
+level2_2025W38_2C_0023_4D3_spx_l2b-v27-2026-237,3,3,2025-09-18T14:28:43,en_snapshot fv=0.949 lam=2.0379 cubre 09-18 14h
+level2_2025W38_2C_0124_1D3_spx_l2b-v27-2026-237,3,3,2025-09-19T03:28:40,unica imagen del 09-19 en V3
+level2_2025W38_2C_0342_1D3_spx_l2b-v27-2026-237,3,3,2025-09-20T05:32:00,en_snapshot fv=0.949 lam=2.085 cubre 09-20
+level2_2026W08_2A_0233_2D3_spx_l2b-v27-2026-227,3,4,2026-02-20T17:18:23,en_snapshot fv=0.96 lam=1.981 cubre 02-20
+level2_2026W08_2A_0233_4D3_spx_l2b-v27-2026-227,3,4,2026-02-20T17:22:41,en_snapshot fv=0.938 lam=2.0731 pareada con V3
+level2_2026W08_2A_0361_1D3_spx_l2b-v27-2026-227,3,4,2026-02-21T09:32:47,cubre 02-21 dither 1
+level2_2026W08_2A_0361_4D3_spx_l2b-v27-2026-227,3,4,2026-02-21T09:39:16,segundo dither 0361 02-21 equilibra fechas V4
+level2_2026W09_2A_0224_3D3_spx_l2b-v27-2026-229,3,5,2026-02-27T15:30:25,en_snapshot fv=0.96 lam=1.6773 pareada con V3
+level2_2026W09_2A_0289_1D3_spx_l2b-v27-2026-229,3,5,2026-02-27T23:38:11,cubre obs_id 0289 02-27 23h dither 1
+level2_2026W09_2A_0289_3D3_spx_l2b-v27-2026-229,3,5,2026-02-27T23:42:29,segundo dither en 0289 02-27 23h
+level2_2026W09_2A_0552_1D3_spx_l2b-v27-2026-229,3,5,2026-03-01T11:27:28,en_snapshot fv=0.963 lam=1.7549 pareada con V3
+level2_2026W09_2A_0552_3D3_spx_l2b-v27-2026-229,3,5,2026-03-01T11:31:46,en_snapshot fv=0.965 lam=1.8369 cubre 03-01
+level2_2026W10_1A_0120_1D3_spx_l2b-v27-2026-229,3,5,2026-03-02T13:31:14,unica imagen del 03-02 y cierre B3
+level2_2025W36_1A_0095_1D4_spx_l2b-v27-2026-232,4,1,2025-09-01T10:04:17,cubre obs_id 0095 09-01 10h
+level2_2025W36_1A_0155_1D4_spx_l2b-v27-2026-232,4,1,2025-09-01T16:29:34,unica de obs_id 0155 09-01 16h
+level2_2025W36_1A_0233_3D4_spx_l2b-v27-2026-232,4,1,2025-09-02T00:45:32,en_snapshot fv=0.938 lam=2.4876 cubre 09-02 00h
+level2_2025W36_1A_0446_3D4_spx_l2b-v27-2026-232,4,1,2025-09-02T23:31:42,en_snapshot fv=0.934 lam=2.695 cubre 09-02 23h
+level2_2025W36_1A_0606_1D4_spx_l2b-v27-2026-232,4,1,2025-09-03T17:22:23,en_snapshot fv=0.936 lam=2.8433 cubre 09-03 17h
+level2_2025W36_1A_0606_3D4_spx_l2b-v27-2026-232,4,1,2025-09-03T17:26:41,en_snapshot fv=0.935 lam=2.9999 segundo dither 0606
+level2_2025W36_1A_0663_1D4_spx_l2b-v27-2026-232,4,1,2025-09-03T23:53:31,en_snapshot fv=0.93 lam=3.2817 cubre 09-03 23h
+level2_2025W36_1A_0677_1D4_spx_l2b-v27-2026-232,4,1,2025-09-04T01:35:48,cubre obs_id 0677 09-04
+level2_2026W10_1A_0445_2D4_spx_l2b-v27-2026-229,4,5,2026-03-04T07:56:46,en_snapshot fv=0.925 lam=2.9187 cubre 03-04
+level2_2026W10_1A_0445_4D4_spx_l2b-v27-2026-229,4,5,2026-03-04T08:01:04,en_snapshot fv=0.925 lam=3.0829 pareada con V1
+level2_2026W10_2B_0137_2D4_spx_l2b-v27-2026-231,4,5,2026-03-06T05:33:03,en_snapshot fv=0.924 lam=3.253 pareada con V1
+level2_2026W10_2B_0137_4D4_spx_l2b-v27-2026-231,4,5,2026-03-06T05:37:21,en_snapshot fv=0.918 lam=3.4322 cubre 03-06
+level2_2026W10_2B_0591_4D4_spx_l2b-v27-2026-231,4,5,2026-03-08T16:15:01,en_snapshot fv=0.934 lam=2.4654 pareada con V1
+level2_2026W10_2B_0626_1D4_spx_l2b-v27-2026-231,4,5,2026-03-08T21:05:12,cubre obs_id 0626 03-08 21h sin snapshots
+level2_2026W11_1A_0285_1D4_spx_l2b-v27-2026-232,4,5,2026-03-10T10:32:45,en_snapshot fv=0.925 lam=2.5312 cubre 03-10
+level2_2026W11_1A_0285_3D4_spx_l2b-v27-2026-232,4,5,2026-03-10T10:37:03,en_snapshot fv=0.928 lam=2.67 pareada con V1
+level2_2026W11_1A_0645_1D4_spx_l2b-v27-2026-232,4,5,2026-03-12T00:03:00,en_snapshot fv=0.942 lam=2.8168 cierre B4
+level2_2025W37_1A_0068_1D5_spx_l2b-v27-2026-235,5,2,2025-09-08T06:36:11,cubre obs_id 0068 09-08 06h
+level2_2025W37_1A_0124_1D5_spx_l2b-v27-2026-235,5,2,2025-09-08T13:11:36,en_snapshot fv=0.971 lam=3.8271 cubre 09-08 13h
+level2_2025W37_1A_0124_3D5_spx_l2b-v27-2026-235,5,2,2025-09-08T13:15:54,en_snapshot fv=0.952 lam=3.8936 segundo dither 0124
+level2_2025W37_1A_0366_1D5_spx_l2b-v27-2026-235,5,2,2025-09-09T20:07:28,cubre obs_id 0366 09-09 20h
+level2_2025W37_1A_0379_1D5_spx_l2b-v27-2026-235,5,2,2025-09-09T21:45:48,en_snapshot fv=0.95 lam=4.0649 cubre 09-09 21h
+level2_2025W37_1A_0379_3D5_spx_l2b-v27-2026-235,5,2,2025-09-09T21:50:06,en_snapshot fv=0.968 lam=4.1359 segundo dither 0379
+level2_2025W37_1A_0496_1D5_spx_l2b-v27-2026-235,5,2,2025-09-10T12:26:34,cubre obs_id 0496 09-10 12h
+level2_2025W37_1A_0553_1D5_spx_l2b-v27-2026-235,5,2,2025-09-10T18:56:57,unica de obs_id 0553 09-10 18h
+level2_2026W09_2A_0503_4D5_spx_l2b-v27-2026-229,5,5,2026-03-01T05:02:11,en_snapshot fv=0.962 lam=4.1321 pareada con V2
+level2_2026W10_1A_0092_2D5_spx_l2b-v27-2026-229,5,5,2026-03-02T10:17:35,en_snapshot fv=0.944 lam=4.2037 cubre 03-02
+level2_2026W10_1A_0092_4D5_spx_l2b-v27-2026-229,5,5,2026-03-02T10:21:53,en_snapshot fv=0.942 lam=4.276 segundo dither 0092
+level2_2026W10_1A_0602_3D5_spx_l2b-v27-2026-229,5,5,2026-03-05T05:09:24,en_snapshot fv=0.96 lam=4.3864 cubre 03-05 05h
+level2_2026W10_1A_0639_4D5_spx_l2b-v27-2026-229,5,5,2026-03-05T10:03:51,cubre 0639 03-05 10h evitando 0639_3 de fv=0.715
+level2_2026W10_2B_0340_1D5_spx_l2b-v27-2026-231,5,5,2026-03-07T07:35:10,en_snapshot fv=0.967 lam=3.8788 pareada con V2
+level2_2026W10_2B_0340_3D5_spx_l2b-v27-2026-231,5,5,2026-03-07T07:39:27,segundo dither en 0340 03-07
+level2_2026W11_1A_0042_1D5_spx_l2b-v27-2026-232,5,5,2026-03-09T05:12:29,unica del 03-09 y cierre temporal B5
+level2_2025W37_2A_0051_1D6_spx_l2b-v27-2026-236,6,2,2025-09-11T16:15:33,unica imagen B6 en V2 requerida por criterio 1
+level2_2025W38_1A_0538_1D6_spx_l2b-v27-2026-237,6,3,2025-09-17T02:33:33,cubre obs_id 0538 09-17 02h
+level2_2025W38_1A_0691_1D6_spx_l2b-v27-2026-237,6,3,2025-09-17T22:07:35,en_snapshot fv=0.938 lam=4.5046 cubre 09-17 22h
+level2_2025W38_1A_0691_4D6_spx_l2b-v27-2026-237,6,3,2025-09-17T22:14:02,en_snapshot fv=0.936 lam=4.6035 segundo dither 0691
+level2_2025W38_1A_0738_2D6_spx_l2b-v27-2026-237,6,3,2025-09-18T04:41:13,en_snapshot fv=0.936 lam=4.8527 cubre 09-18 04h
+level2_2025W38_2C_0023_2D6_spx_l2b-v27-2026-237,6,3,2025-09-18T14:24:25,en_snapshot fv=0.935 lam=4.671 cubre 09-18 14h
+level2_2025W38_2C_0124_1D6_spx_l2b-v27-2026-237,6,3,2025-09-19T03:28:40,unica imagen del 09-19 en V3
+level2_2025W38_2C_0342_1D6_spx_l2b-v27-2026-237,6,3,2025-09-20T05:32:00,cubre obs_id 0342 09-20
+level2_2026W08_2A_0233_1D6_spx_l2b-v27-2026-227,6,4,2026-02-20T17:16:14,segundo dither en 0233 02-20 equilibra fechas V4
+level2_2026W08_2A_0233_4D6_spx_l2b-v27-2026-227,6,4,2026-02-20T17:22:41,en_snapshot fv=0.938 lam=4.7647 cubre 02-20
+level2_2026W08_2A_0361_2D6_spx_l2b-v27-2026-227,6,4,2026-02-21T09:34:58,en_snapshot fv=0.936 lam=4.833 cubre 02-21
+level2_2026W08_2A_0361_4D6_spx_l2b-v27-2026-227,6,4,2026-02-21T09:39:16,en_snapshot fv=0.931 lam=4.9038 segundo dither 0361
+level2_2026W09_2A_0224_2D6_spx_l2b-v27-2026-229,6,5,2026-02-27T15:28:16,cubre obs_id 0224 02-27 15h
+level2_2026W09_2A_0289_1D6_spx_l2b-v27-2026-229,6,5,2026-02-27T23:38:11,en_snapshot fv=0.932 lam=4.9394 cubre 02-27 23h
+level2_2026W09_2A_0552_1D6_spx_l2b-v27-2026-229,6,5,2026-03-01T11:27:28,cubre obs_id 0552 03-01 evitando retry
+level2_2026W09_2A_0552_4D6_spx_l2b-v27-2026-229,6,5,2026-03-01T11:33:55,segundo dither en 0552 03-01 evitando retry
+level2_2026W10_1A_0120_1D6_spx_l2b-v27-2026-229,6,5,2026-03-02T13:31:14,en_snapshot fv=0.94 lam=4.6518 pareada con V3
+level2_2025W36_1A_0095_2D1_spx_l2b-v27-2026-232,1,1,2025-09-01T10:06:26,refuerzo V1 obs_id 0095 09-01 10h dither 2
+level2_2025W36_1A_0233_2D1_spx_l2b-v27-2026-232,1,1,2025-09-02T00:43:24,refuerzo V1 obs_id 0233 09-02 00h dither 2
+level2_2025W36_1A_0663_1D1_spx_l2b-v27-2026-232,1,1,2025-09-03T23:53:31,refuerzo V1 obs_id 0663 09-03 23h dither 1
+level2_2025W36_1A_0677_2D1_spx_l2b-v27-2026-232,1,1,2025-09-04T01:37:57,refuerzo V1 obs_id 0677 09-04 01h dither 2
+level2_2026W10_2B_0591_4D1_spx_l2b-v27-2026-231,1,5,2026-03-08T16:15:01,refuerzo V5 obs_id 0591 03-08 16h dither 4
+level2_2026W10_2B_0626_4D1_spx_l2b-v27-2026-231,1,5,2026-03-08T21:11:39,refuerzo V5 obs_id 0626 03-08 21h dither 4
+level2_2026W11_1A_0285_2D1_spx_l2b-v27-2026-232,1,5,2026-03-10T10:34:54,refuerzo V5 obs_id 0285 03-10 10h dither 2
+level2_2026W11_1A_0285_4D1_spx_l2b-v27-2026-232,1,5,2026-03-10T10:39:12,refuerzo V5 obs_id 0285 03-10 10h dither 4
+level2_2025W37_1A_0068_4D2_spx_l2b-v27-2026-235,2,2,2025-09-08T06:42:38,refuerzo V2 obs_id 0068 09-08 06h dither 4
+level2_2025W37_1A_0124_3D2_spx_l2b-v27-2026-235,2,2,2025-09-08T13:15:54,refuerzo V2 obs_id 0124 09-08 13h dither 3
+level2_2025W37_1A_0366_1D2_spx_l2b-v27-2026-235,2,2,2025-09-09T20:07:28,refuerzo V2 obs_id 0366 09-09 20h dither 1
+level2_2025W37_1A_0366_4D2_spx_l2b-v27-2026-235,2,2,2025-09-09T20:13:55,refuerzo V2 obs_id 0366 09-09 20h dither 4
+level2_2025W37_1A_0496_2D2_spx_l2b-v27-2026-235,2,2,2025-09-10T12:28:43,refuerzo V2 obs_id 0496 09-10 12h dither 2
+level2_2026W10_1A_0092_1D2_spx_l2b-v27-2026-229,2,5,2026-03-02T10:15:26,refuerzo V5 obs_id 0092 03-02 10h dither 1
+level2_2026W10_1A_0092_4D2_spx_l2b-v27-2026-229,2,5,2026-03-02T10:21:53,refuerzo V5 obs_id 0092 03-02 10h dither 4
+level2_2026W10_1A_0602_3D2_spx_l2b-v27-2026-229,2,5,2026-03-05T05:09:24,refuerzo V5 obs_id 0602 03-05 05h dither 3
+level2_2026W10_1A_0639_4D2_spx_l2b-v27-2026-229,2,5,2026-03-05T10:03:51,refuerzo V5 obs_id 0639 03-05 10h dither 4
+level2_2025W38_1A_0538_1D3_spx_l2b-v27-2026-237,3,3,2025-09-17T02:33:33,refuerzo V3 apertura 09-17 02h dither 1
+level2_2025W38_2C_0342_2D3_spx_l2b-v27-2026-237,3,3,2025-09-20T05:34:09,refuerzo V3 cierre 09-20 05h dither 2
+level2_2026W08_2A_0233_1D3_spx_l2b-v27-2026-227,3,4,2026-02-20T17:16:14,refuerzo prioritario V4 obs_id 0233 02-20 dither 1
+level2_2026W08_2A_0233_3D3_spx_l2b-v27-2026-227,3,4,2026-02-20T17:20:32,refuerzo prioritario V4 obs_id 0233 02-20 dither 3
+level2_2026W08_2A_0361_2D3_spx_l2b-v27-2026-227,3,4,2026-02-21T09:34:58,refuerzo prioritario V4 obs_id 0361 02-21 dither 2
+level2_2026W08_2A_0361_3D3_spx_l2b-v27-2026-227,3,4,2026-02-21T09:37:07,refuerzo prioritario V4 obs_id 0361 02-21 dither 3
+level2_2026W09_2A_0224_2D3_spx_l2b-v27-2026-229,3,5,2026-02-27T15:28:16,refuerzo V5 obs_id 0224 02-27 15h dither 2
+level2_2026W09_2A_0552_4D3_spx_l2b-v27-2026-229,3,5,2026-03-01T11:33:55,refuerzo V5 obs_id 0552 03-01 11h dither 4
+level2_2025W36_1A_0095_2D4_spx_l2b-v27-2026-232,4,1,2025-09-01T10:06:26,refuerzo V1 obs_id 0095 09-01 10h dither 2
+level2_2025W36_1A_0233_2D4_spx_l2b-v27-2026-232,4,1,2025-09-02T00:43:24,refuerzo V1 obs_id 0233 09-02 00h dither 2
+level2_2025W36_1A_0446_1D4_spx_l2b-v27-2026-232,4,1,2025-09-02T23:27:24,refuerzo V1 obs_id 0446 09-02 23h dither 1
+level2_2025W36_1A_0663_4D4_spx_l2b-v27-2026-232,4,1,2025-09-03T23:59:58,refuerzo V1 obs_id 0663 09-03 23h dither 4
+level2_2025W36_1A_0677_2D4_spx_l2b-v27-2026-232,4,1,2025-09-04T01:37:57,refuerzo V1 obs_id 0677 09-04 01h dither 2
+level2_2026W10_2B_0591_3D4_spx_l2b-v27-2026-231,4,5,2026-03-08T16:12:52,refuerzo V5 obs_id 0591 03-08 16h dither 3
+level2_2026W10_2B_0626_4D4_spx_l2b-v27-2026-231,4,5,2026-03-08T21:11:39,refuerzo V5 obs_id 0626 03-08 21h dither 4
+level2_2026W11_1A_0285_4D4_spx_l2b-v27-2026-232,4,5,2026-03-10T10:39:12,refuerzo V5 obs_id 0285 03-10 10h dither 4
+level2_2025W37_1A_0068_3D5_spx_l2b-v27-2026-235,5,2,2025-09-08T06:40:29,refuerzo V2 obs_id 0068 09-08 06h dither 3
+level2_2025W37_1A_0068_4D5_spx_l2b-v27-2026-235,5,2,2025-09-08T06:42:38,refuerzo V2 obs_id 0068 09-08 06h dither 4
+level2_2025W37_1A_0366_4D5_spx_l2b-v27-2026-235,5,2,2025-09-09T20:13:55,refuerzo V2 obs_id 0366 09-09 20h dither 4
+level2_2025W37_1A_0379_4D5_spx_l2b-v27-2026-235,5,2,2025-09-09T21:52:15,refuerzo V2 obs_id 0379 09-09 21h dither 4
+level2_2025W37_1A_0496_2D5_spx_l2b-v27-2026-235,5,2,2025-09-10T12:28:43,refuerzo V2 obs_id 0496 09-10 12h dither 2
+level2_2026W09_2A_0503_1D5_spx_l2b-v27-2026-229,5,5,2026-03-01T04:55:44,refuerzo V5 obs_id 0503 03-01 04h dither 1
+level2_2026W10_1A_0092_1D5_spx_l2b-v27-2026-229,5,5,2026-03-02T10:15:26,refuerzo V5 obs_id 0092 03-02 10h dither 1
+level2_2026W10_1A_0602_1D5_spx_l2b-v27-2026-229,5,5,2026-03-05T05:05:06,refuerzo V5 obs_id 0602 03-05 05h dither 1
+level2_2026W10_2B_0340_4D5_spx_l2b-v27-2026-231,5,5,2026-03-07T07:41:36,refuerzo V5 obs_id 0340 03-07 07h dither 4
+level2_2025W38_2C_0342_2D6_spx_l2b-v27-2026-237,6,3,2025-09-20T05:34:09,refuerzo V3 cierre 09-20 05h dither 2
+level2_2026W08_2A_0233_2D6_spx_l2b-v27-2026-227,6,4,2026-02-20T17:18:23,refuerzo prioritario V4 obs_id 0233 02-20 dither 2
+level2_2026W08_2A_0233_3D6_spx_l2b-v27-2026-227,6,4,2026-02-20T17:20:32,refuerzo prioritario V4 obs_id 0233 02-20 dither 3
+level2_2026W08_2A_0361_1D6_spx_l2b-v27-2026-227,6,4,2026-02-21T09:32:47,refuerzo prioritario V4 obs_id 0361 02-21 dither 1
+level2_2026W08_2A_0361_3D6_spx_l2b-v27-2026-227,6,4,2026-02-21T09:37:07,refuerzo prioritario V4 obs_id 0361 02-21 dither 3
+level2_2026W09_2A_0224_4D6_spx_l2b-v27-2026-229,6,5,2026-02-27T15:32:34,refuerzo V5 obs_id 0224 02-27 15h dither 4
+level2_2026W09_2A_0289_3D6_spx_l2b-v27-2026-229,6,5,2026-02-27T23:42:29,refuerzo V5 obs_id 0289 02-27 23h dither 3
+level2_2026W09_2A_0552_2D6_spx_l2b-v27-2026-229,6,5,2026-03-01T11:29:37,refuerzo V5 obs_id 0552 03-01 11h dither 2 evitando retry
