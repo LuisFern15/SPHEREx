@@ -430,7 +430,9 @@ def bajar_recorte(
         r = requests.get(
             url,
             params={"center": f"{centro.ra.deg},{centro.dec.deg}d", "size": f"{tamano_grados}"},
-            timeout=120,
+            # (conexión, lectura): un recorte pequeño no debe bloquear un hilo más que el
+            # presupuesto de la consulta en vivo (45 s)
+            timeout=(10, 30),
         )
         r.raise_for_status()  # dentro del reintento: IRSA devuelve 502/503 cuando está saturado
         return r

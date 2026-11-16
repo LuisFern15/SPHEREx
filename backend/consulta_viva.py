@@ -38,6 +38,58 @@ from generar_snapshots import (
 
 logger = logging.getLogger("spherex.live")
 
+URL_SIA_IRSA = "https://irsa.ipac.caltech.edu/SIA"
+RADIO_SIA_GRADOS = 0.003
+
+
+def _consultar_sia_directo(centro: SkyCoord, coleccion: str) -> Any:
+    """
+    Consulta el SIA v2 de IRSA con un GET directo y devuelve la tabla de imágenes
+
+    No pasa por /SIA/capabilities, que IRSA a veces tiene caído aunque la consulta funcione.
+
+    Parameters
+    ----------
+    `centro`:SkyCoord Posición ICRS a consultar.
+    `coleccion`:str Colección de IRSA (spherex_dr1 o spherex_qr3).
+
+    Returns
+    -------
+    `astropy.table.Table` Las mismas columnas que devuelve Irsa.query_sia.
+    """
+    from astropy.io.votable import parse_single_table
+
+    parametros = {
+        "COLLECTION": coleccion,
+        "POS": f"CIRCLE {centro.ra.deg:.6f} {centro.dec.deg:.6f} {RADIO_SIA_GRADOS}",
+        "MAXREC": "5000",
+        "RESPONSEFORMAT": "VOTABLE",
+    }
+    respuesta = requests.get(URL_SIA_IRSA, params=parametros, timeout=90)
+    respuesta.raise_for_status()
+    # use_names_over_ids: columnas por nombre (access_url, t_min...), como Irsa.query_sia
+    return parse_single_table(io.BytesIO(respuesta.content)).to_table(use_names_over_ids=True)
+
+
+def _consultar_sia(centro: SkyCoord, coleccion: str) -> Any:
+    """
+    Consulta SIA con astroquery y, si falla el endpoint de capabilities, con un GET directo
+
+    Parameters
+    ----------
+    `centro`:SkyCoord Posición ICRS a consultar.
+    `coleccion`:str Colección de IRSA.
+
+    Returns
+    -------
+    `astropy.table.Table` Tabla de imágenes que cubren la posición.
+    """
+    try:
+        return Irsa.query_sia(pos=(centro, RADIO_SIA_GRADOS * u.deg), collection=coleccion, maxrec=5000)
+    except DALServiceError as error:
+        logger.warning("SIA vía astroquery falló (%s); se intenta GET directo a %s", error.__class__.__name__, URL_SIA_IRSA)
+        return _consultar_sia_directo(centro, coleccion)
+
 # Caché en memoria de respuestas ya ensambladas para que filtrar por banda D1-D6 sea instantáneo.
 _CACHE_RESPUESTAS_VIVAS: dict[tuple[Any, ...], dict[str, Any]] = {}
 MAX_ENTRADAS_CACHE_VIVA = 24
@@ -230,7 +282,7 @@ def consultar_irsa_en_vivo(
         try:
             tabla = list(
                 con_reintentos(
-                    lambda c=col: Irsa.query_sia(pos=(centro, 0.003 * u.deg), collection=c, maxrec=5000),
+                    lambda c=col: _consultar_sia(centro, c),
                     intentos=2,
                     espera=3,
                     nombre=f"SIA {col}",

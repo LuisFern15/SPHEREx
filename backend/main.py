@@ -49,6 +49,7 @@ DATA_DIR.mkdir(exist_ok=True)
 # propagar el movimiento propio: solo es útil para depurar. Está apagada salvo que se pida con SPHEREX_FITS_LOCAL=1.
 FITS_LOCAL_ACTIVO = os.environ.get("SPHEREX_FITS_LOCAL", "") == "1"
 LIVE_IRSA_DEFAULT = os.environ.get("SPHEREX_LIVE_IRSA", "0") == "1"
+MAX_CUADROS_VIVOS = int(os.environ.get("SPHEREX_MAX_LIVE_FRAMES", "30"))
 SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
 FOTOMETRIA_DIR = Path(__file__).parent / "fotometria"
 INVENTARIO_DIR = Path(__file__).parent / "inventario"
@@ -611,7 +612,8 @@ def get_frames(
             dec=dec,
             size_arcsec=size,
             collection=clean_collection,
-            max_frames=max_frames,
+            # Tope para el servidor público (Render, 512 MB): como mucho 30 cuadros en vivo
+            max_frames=min(max_frames, MAX_CUADROS_VIVOS),
             pmra=pmra,
             pmdec=pmdec,
             epoch=epoch,
