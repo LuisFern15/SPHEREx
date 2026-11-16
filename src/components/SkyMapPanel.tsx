@@ -251,7 +251,7 @@ export const SkyMapPanel: React.FC<SkyMapPanelProps> = ({
     `px-2 py-0.5 rounded border text-[11px] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
       active
         ? 'bg-cyan-600 border-cyan-600 text-slate-950 font-semibold'
-        : 'border-slate-700 bg-[#07090E] text-cyan-300 hover:border-cyan-500'
+        : 'border-slate-700 bg-[#0A0A0A] text-cyan-300 hover:border-cyan-500'
     }`;
 
   return (
@@ -275,12 +275,12 @@ export const SkyMapPanel: React.FC<SkyMapPanelProps> = ({
       </button>
 
       <div id={bodyId} className={isOpen ? 'flex flex-col gap-2' : 'hidden'}>
-        <div className="relative h-[220px] w-full bg-[#07090E] border border-slate-800 rounded overflow-hidden">
+        <div className="relative h-[220px] w-full bg-[#0A0A0A] border border-slate-800 rounded overflow-hidden">
           <div id={viewerId} className="w-full h-full" />
 
           {status === 'loading' && (
             <div
-              className="absolute inset-0 flex items-center justify-center gap-2 bg-[#07090E]/90 text-slate-300"
+              className="absolute inset-0 flex items-center justify-center gap-2 bg-[#0A0A0A]/90 text-slate-300"
               role="status"
               aria-live="polite"
             >
@@ -290,7 +290,7 @@ export const SkyMapPanel: React.FC<SkyMapPanelProps> = ({
           )}
 
           {status === 'error' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-[#0B0F17] p-3 text-center">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-[#121212] p-3 text-center">
               <span className="text-slate-300 leading-snug">{t.skyLoadError}</span>
               <a
                 href={IRSA_SPHEREX_URL}

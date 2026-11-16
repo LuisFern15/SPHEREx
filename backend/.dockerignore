@@ -1,0 +1,10 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+cache/
+data/*.fits
+data/*.fits.gz
+tests/
+.env

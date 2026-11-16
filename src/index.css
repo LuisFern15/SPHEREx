@@ -1,8 +1,44 @@
 @import "tailwindcss";
 
+/*
+ * Monochrome theme. The interface chrome is black, white and neutral gray so the
+ * SPHEREx images carry the color budget; color is reserved for data meaning
+ * (quality flags, detectors, catalog markers), warnings, and the red target mark.
+ * Tailwind v4 builds every color class from these variables, so remapping the
+ * slate and cyan scales restyles the components without touching them.
+ */
 @theme {
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* slate → neutral gray (same lightness order) */
+  --color-slate-50: #fafafa;
+  --color-slate-100: #f2f2f2;
+  --color-slate-200: #e0e0e0;
+  --color-slate-300: #c8c8c8;
+  --color-slate-400: #a1a1a1;
+  --color-slate-500: #7a7a7a;
+  --color-slate-600: #575757;
+  --color-slate-700: #3d3d3d;
+  --color-slate-800: #282828;
+  --color-slate-900: #181818;
+  --color-slate-950: #0d0d0d;
+
+  /* cyan (the old UI accent) → white and light gray, so selection reads as "lit" */
+  --color-cyan-50: #ffffff;
+  --color-cyan-100: #ffffff;
+  --color-cyan-200: #f5f5f5;
+  --color-cyan-300: #ececec;
+  --color-cyan-400: #e2e2e2;
+  --color-cyan-500: #d0d0d0;
+  --color-cyan-600: #5c5c5c;
+  --color-cyan-700: #474747;
+  --color-cyan-800: #333333;
+  --color-cyan-900: #222222;
+  --color-cyan-950: #141414;
+
+  /* Target red: the one accent of the chrome */
+  --color-target: #ef4444;
 }
 
 @layer base {
@@ -10,8 +46,8 @@
   body,
   #root {
     height: 100%;
-    background-color: #07090e;
-    color: #f1f5f9;
+    background-color: #0a0a0a;
+    color: #f2f2f2;
     font-family: var(--font-sans);
   }
 }
@@ -20,12 +56,37 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Milky Way behind the cutout viewport (see CutoutViewport). */
+.sky-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: #050505;
+  background-image: url("/fondo/via_lactea_gris.jpg");
+  background-repeat: repeat-x;
+  filter: grayscale(1) contrast(1.15);
+  transition: background-position 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sky-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(5, 5, 5, 0.25) 0%, rgba(5, 5, 5, 0.7) 70%, rgba(5, 5, 5, 0.85) 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky-backdrop {
+    transition: none;
+  }
+}
+
 /* Precision range slider styling */
 input[type="range"].sci-slider {
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
-  background: #1e293b;
+  background: #2a2a2a;
   border-radius: 2px;
   outline: none;
 }
@@ -36,23 +97,23 @@ input[type="range"].sci-slider::-webkit-slider-thumb {
   width: 12px;
   height: 12px;
   border-radius: 2px;
-  background: #06b6d4;
-  border: 1px solid #0e7490;
+  background: #e2e2e2;
+  border: 1px solid #7a7a7a;
   cursor: pointer;
   transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 input[type="range"].sci-slider::-webkit-slider-thumb:hover {
   transform: scale(1.15);
-  background: #22d3ee;
+  background: #ffffff;
 }
 
 input[type="range"].sci-slider::-moz-range-thumb {
   width: 12px;
   height: 12px;
   border-radius: 2px;
-  background: #06b6d4;
-  border: 1px solid #0e7490;
+  background: #e2e2e2;
+  border: 1px solid #7a7a7a;
   cursor: pointer;
 }
 
@@ -63,14 +124,14 @@ input[type="range"].sci-slider::-moz-range-thumb {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b0f17;
+  background: #121212;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #2e2e2e;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #474747;
 }

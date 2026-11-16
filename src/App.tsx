@@ -478,7 +478,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#07090E] text-slate-100">
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#0A0A0A] text-slate-100">
       <TopBar
         t={t}
         lang={lang}

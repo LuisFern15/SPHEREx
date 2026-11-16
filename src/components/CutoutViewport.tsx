@@ -19,7 +19,12 @@ import {
   ProvenanceState,
   TargetPreset,
 } from '../types/spherex';
-import { pixelToSkyLinear, resolvePredictedPixel, skyToPixelLinear } from '../utils/coordinates';
+import {
+  equatorialToGalactic,
+  pixelToSkyLinear,
+  resolvePredictedPixel,
+  skyToPixelLinear,
+} from '../utils/coordinates';
 import { DecodedFlagEntry, decodePixelFlags } from '../utils/flags';
 
 export interface HoveredPixelInfo {
@@ -145,6 +150,30 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
   const isDifference =
     compareMode === 'diff' && Boolean(refFrame) && (!deltaLambdaBlocked || allowUnsafeDiff);
 
+  // Milky Way backdrop (ESO/S. Brunier, galactic plate carrée, l = 0 at center, l grows to the left),
+  // shifted so the cutout's sky position sits behind the image. Keeps the last position while loading.
+  const lastGalacticRef = useRef<{ l: number; b: number } | null>(null);
+  const backdropCenter = useMemo(() => {
+    const crval = displayedFrame?.wcs?.crval;
+    if (crval && Number.isFinite(crval[0]) && Number.isFinite(crval[1])) {
+      lastGalacticRef.current = equatorialToGalactic(crval[0], crval[1]);
+    }
+    return lastGalacticRef.current;
+  }, [displayedFrame]);
+  const backdropStyle = useMemo<React.CSSProperties>(() => {
+    const MAP_W = 4000;
+    const MAP_H = 2000;
+    const { l, b } = backdropCenter ?? { l: 0, b: 0 };
+    const fx = ((0.5 - l / 360) % 1 + 1) % 1;
+    const fy = 0.5 - b / 180;
+    return {
+      backgroundSize: `${MAP_W}px ${MAP_H}px`,
+      backgroundPosition: `${Math.round(canvasDims.width / 2 - fx * MAP_W)}px ${Math.round(
+        canvasDims.height / 2 - fy * MAP_H
+      )}px`,
+    };
+  }, [backdropCenter, canvasDims.width, canvasDims.height]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const renderer = rendererRef.current;
@@ -156,8 +185,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     if (!displayedFrame) {
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.fillStyle = '#07090E';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
       setTransform(null);
       return;
@@ -410,11 +438,20 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       }}
       onPointerMove={handlePointerMove}
       onWheel={handleWheel}
-      className={`relative flex-1 bg-[#07090E] overflow-hidden select-none ${
+      className={`relative flex-1 bg-[#050505] overflow-hidden select-none ${
         dragging ? 'cursor-grabbing' : 'cursor-crosshair'
       }`}
     >
-      <canvas ref={canvasRef} className="block w-full h-full" />
+      <div className="sky-backdrop" style={backdropStyle} aria-hidden="true" />
+      <canvas ref={canvasRef} className="relative block w-full h-full" />
+
+      {backdropCenter && (
+        <div className="absolute bottom-3 right-3 pointer-events-none text-[10px] font-mono tabular-nums text-slate-500">
+          {lang === 'es' ? 'Fondo: Vía Láctea' : 'Background: Milky Way'} · l {backdropCenter.l.toFixed(1)}° b{' '}
+          {backdropCenter.b >= 0 ? '+' : ''}
+          {backdropCenter.b.toFixed(1)}° · ESO/S. Brunier (CC BY 4.0)
+        </div>
+      )}
 
       {/* Synchronized SVG Overlay */}
       {displayedFrame && transform && (
@@ -491,7 +528,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
           {showReticles && reticles && (
             <>
               {reticles.queryScreen && (
-                <g stroke="#06B6D4" strokeWidth={1.5}>
+                <g stroke="#EF4444" strokeWidth={1.5}>
                   <line
                     x1={reticles.queryScreen.x - 16}
                     y1={reticles.queryScreen.y}
@@ -541,7 +578,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
                   <polygon
                     points="8,0 -6,-6 -3,0 -6,6"
                     fill="#FBBF24"
-                    stroke="#07090E"
+                    stroke="#0A0A0A"
                     strokeWidth={0.8}
                   />
                 </g>
@@ -578,7 +615,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       )}
 
       {/* Top-Left HUD: Scale & Active Mode */}
-      <div className="absolute top-3 left-3 pointer-events-none flex flex-col gap-1 text-[11px] font-mono tabular-nums bg-[#0B0F17]/85 border border-slate-800 px-2.5 py-1.5 rounded">
+      <div className="absolute top-3 left-3 pointer-events-none flex flex-col gap-1 text-[11px] font-mono tabular-nums bg-[#121212]/85 border border-slate-800 px-2.5 py-1.5 rounded">
         <div className="text-slate-200 flex items-center gap-2">
           <span>
             FOV {sizeArcsec}&Prime; · {pixelScaleArcsec.toFixed(2)}&Prime;/px
@@ -597,8 +634,8 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
 
       {/* Bottom-Left HUD: Reticle Legend */}
       {showReticles && displayedFrame && (
-        <div className="absolute bottom-3 left-3 pointer-events-none flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] bg-[#0B0F17]/85 border border-slate-800 px-2.5 py-1.5 rounded">
-          <span className="inline-flex items-center gap-1.5 text-cyan-300">
+        <div className="absolute bottom-3 left-3 pointer-events-none flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] bg-[#121212]/85 border border-slate-800 px-2.5 py-1.5 rounded">
+          <span className="inline-flex items-center gap-1.5 text-red-400">
             <span className="font-mono font-bold">+</span>
             <span>{t.reticleFixedLegend}</span>
           </span>
@@ -618,11 +655,11 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       {/* Loading Overlay */}
       {loading && (
         <div
-          className="absolute inset-0 flex items-center justify-center p-6 bg-[#07090E]/75 pointer-events-none"
+          className="absolute inset-0 flex items-center justify-center p-6 bg-[#0A0A0A]/75 pointer-events-none"
           role="status"
           aria-live="polite"
         >
-          <div className="border border-slate-700 bg-[#0F141F]/95 rounded px-4 py-2.5 flex items-center gap-2.5 text-xs text-cyan-300 font-mono">
+          <div className="border border-slate-700 bg-[#1A1A1A]/95 rounded px-4 py-2.5 flex items-center gap-2.5 text-xs text-cyan-300 font-mono">
             <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" aria-hidden="true" />
             <span>{isLiveQuery ? t.queryingLiveIrsa : t.loadingData}</span>
           </div>
@@ -631,8 +668,8 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
 
       {/* Explicit Error or Empty State (Never a blank unexplained canvas) */}
       {!loading && provenance === 'error' && !emptyMessage && (
-        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#07090E]/90">
-          <div className="max-w-md border border-rose-800/70 bg-[#0F141F] rounded p-5 flex flex-col gap-3">
+        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#0A0A0A]/90">
+          <div className="max-w-md border border-rose-800/70 bg-[#1A1A1A] rounded p-5 flex flex-col gap-3">
             <div className="text-sm font-semibold text-rose-300">
               ✖ {t.provenanceError}
             </div>
@@ -659,8 +696,8 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       )}
 
       {!loading && provenance === 'error' && emptyMessage && (
-        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#07090E]/90">
-          <div className="max-w-md border border-slate-700 bg-[#0F141F] rounded p-5 flex flex-col gap-3">
+        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#0A0A0A]/90">
+          <div className="max-w-md border border-slate-700 bg-[#1A1A1A] rounded p-5 flex flex-col gap-3">
             <div className="text-sm font-semibold text-slate-200">
               {t.emptyCollectionTitle} ({activeCollection})
             </div>
@@ -691,8 +728,8 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       )}
 
       {!loading && provenance !== 'error' && totalFramesCount === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#07090E]/90">
-          <div className="max-w-md border border-slate-700 bg-[#0F141F] rounded p-5 flex flex-col gap-3">
+        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#0A0A0A]/90">
+          <div className="max-w-md border border-slate-700 bg-[#1A1A1A] rounded p-5 flex flex-col gap-3">
             <div className="text-sm font-semibold text-slate-200">
               {t.emptyCollectionTitle} ({activeCollection})
             </div>
@@ -724,7 +761,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
 
       {!loading && provenance !== 'error' && totalFramesCount > 0 && !displayedFrame && (
         <div className="absolute inset-0 flex items-center justify-center p-6 pointer-events-none">
-          <div className="border border-slate-800 bg-[#0F141F]/95 rounded px-4 py-3 text-xs text-slate-300">
+          <div className="border border-slate-800 bg-[#1A1A1A]/95 rounded px-4 py-3 text-xs text-slate-300">
             {t.noDataTitle}
           </div>
         </div>

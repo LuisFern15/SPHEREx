@@ -148,6 +148,25 @@ export function formatDecSexagesimal(decDeg: number): string {
  * Approximate linear WCS pixel -> sky (J2000/ICRS deg).
  * Uses FITS 1-based crpix convention: pixel index (0..N-1) maps to (x + 1 - crpix[0]).
  */
+/**
+ * ICRS/J2000 (ra, dec) in degrees -> galactic (l, b) in degrees.
+ * Uses the north galactic pole at (192.85948°, +27.12825°) and l of the NCP = 122.93192°.
+ */
+export function equatorialToGalactic(ra: number, dec: number): { l: number; b: number } {
+  const rad = Math.PI / 180;
+  const raPole = 192.85948 * rad;
+  const decPole = 27.12825 * rad;
+  const lNcp = 122.93192;
+  const a = ra * rad;
+  const d = dec * rad;
+  const sinB = Math.sin(d) * Math.sin(decPole) + Math.cos(d) * Math.cos(decPole) * Math.cos(a - raPole);
+  const b = Math.asin(Math.max(-1, Math.min(1, sinB))) / rad;
+  const y = Math.cos(d) * Math.sin(a - raPole);
+  const x = Math.sin(d) * Math.cos(decPole) - Math.cos(d) * Math.sin(decPole) * Math.cos(a - raPole);
+  const l = (((lNcp - Math.atan2(y, x) / rad) % 360) + 360) % 360;
+  return { l, b };
+}
+
 export function pixelToSkyLinear(
   x: number,
   y: number,
