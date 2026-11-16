@@ -462,6 +462,7 @@ export async function fetchFrames(params: {
 
   try {
     let shouldFallback = false;
+    let backendDetail: string | undefined;
     let res: Response | null = null;
 
     try {
@@ -483,6 +484,16 @@ export async function fetchFrames(params: {
       // Backend asleep, overloaded or IRSA down: serve the stored targets instead
       if (res.status >= 500 || !hasJsonContentType) {
         shouldFallback = true;
+        // Keep the server's own reason (e.g. "IRSA did not respond") to show it if
+        // there is no stored data for this position either.
+        if (hasJsonContentType) {
+          try {
+            const errBody = (await res.json()) as { detail?: unknown } | null;
+            if (errBody?.detail) backendDetail = String(errBody.detail);
+          } catch {
+            // ignore unreadable error body
+          }
+        }
       } else if (!res.ok) {
         let detail = `HTTP ${res.status}`;
         let rawDetail: string | undefined;
@@ -507,7 +518,13 @@ export async function fetchFrames(params: {
 
     if (shouldFallback) {
       window.clearTimeout(timeoutId);
-      return await fetchStaticFrames(ra, dec, size, collection, signal);
+      const stored = await fetchStaticFrames(ra, dec, size, collection, signal);
+      if (backendDetail && stored.frames.length === 0) {
+        return makeErrorResult(ra, dec, size, collection, {
+          errorMessage: `${backendDetail} / The NASA/IPAC IRSA archive did not answer this live query. The five preset targets still work; try this position again in a few minutes.`,
+        });
+      }
+      return stored;
     }
 
     throw new Error(BACKEND_UNAVAILABLE_MSG);
