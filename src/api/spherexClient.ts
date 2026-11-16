@@ -480,7 +480,8 @@ export async function fetchFrames(params: {
     if (res !== null) {
       const hasJsonContentType = isJsonResponse(res);
 
-      if (res.status === 502 || res.status === 504 || !hasJsonContentType) {
+      // Backend asleep, overloaded or IRSA down: serve the stored targets instead
+      if (res.status >= 500 || !hasJsonContentType) {
         shouldFallback = true;
       } else if (!res.ok) {
         let detail = `HTTP ${res.status}`;

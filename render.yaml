@@ -1,0 +1,15 @@
+# Render Blueprint: public backend for SPHEREx Explorer (free plan, Docker).
+# Render injects $PORT; the Dockerfile's CMD listens on it.
+services:
+  - type: web
+    name: spherex-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: SPHEREX_LIVE_IRSA
+        value: "1"

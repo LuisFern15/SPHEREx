@@ -170,6 +170,10 @@ export default function App() {
       if (controller.signal.aborted) return;
       setQueryResult(result);
       setLoading(false);
+    }).catch((err) => {
+      if (controller.signal.aborted) return;
+      console.error('fetchFrames failed', err);
+      setLoading(false);
     });
 
     return () => controller.abort();
