@@ -305,8 +305,22 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     const [imgH, imgW] = displayedFrame.shape;
     const pts: { id: string; label: string; sx: number; sy: number; kind: CatalogSource['kind'] }[] = [];
 
+    // Carry catalog positions (Gaia DR3: J2016.0) to this frame's date with their proper motion.
+    const frameYear = 2000 + (displayedFrame.mjd - 51544.5) / 365.25;
     for (const src of catalogSources) {
-      const px = skyToPixelLinear(src.ra, src.dec, displayedFrame.wcs);
+      let ra = src.ra;
+      let dec = src.dec;
+      if (src.epoch !== undefined && Number.isFinite(frameYear)) {
+        const dtYears = frameYear - src.epoch;
+        const cosDec = Math.cos((src.dec * Math.PI) / 180);
+        if (src.pmra != null && Math.abs(cosDec) > 1e-6) {
+          ra += (src.pmra * dtYears) / 3.6e6 / cosDec;
+        }
+        if (src.pmdec != null) {
+          dec += (src.pmdec * dtYears) / 3.6e6;
+        }
+      }
+      const px = skyToPixelLinear(ra, dec, displayedFrame.wcs);
       if (!px) continue;
       if (px[0] < -1 || px[0] > imgW || px[1] < -1 || px[1] > imgH) continue;
       const scr = toScreenCoords(px[0], px[1], imgH);

@@ -21,11 +21,13 @@ BACKEND_DIR: Path = Path(__file__).resolve().parent
 ORIGEN_SNAPSHOTS: Path = BACKEND_DIR / "snapshots"
 ORIGEN_FOTOMETRIA: Path = BACKEND_DIR / "fotometria"
 ORIGEN_INVENTARIO: Path = BACKEND_DIR / "inventario"
+ORIGEN_CATALOGO: Path = BACKEND_DIR / "catalogo"
 
 PUBLIC_DIR: Path = RAIZ / "public"
 DESTINO_SNAPSHOTS: Path = PUBLIC_DIR / "snapshots"
 DESTINO_FOTOMETRIA: Path = PUBLIC_DIR / "fotometria"
 DESTINO_INVENTARIO: Path = PUBLIC_DIR / "inventario"
+DESTINO_CATALOGO: Path = PUBLIC_DIR / "catalogo"
 
 # Misma distancia máxima que usa el backend (SNAPSHOT_MATCH_ARCSEC en main.py).
 DISTANCIA_COINCIDENCIA_ARCSEC: float = 120.0
@@ -173,6 +175,14 @@ def main() -> None:
     fotometria_por_objetivo = exportar_fotometria()
     inventarios_exportados = exportar_inventarios()
 
+    # Catálogo Gaia DR3 por objetivo (generar_catalogo.py); la caché de consultas no se publica.
+    _limpiar_jsons(DESTINO_CATALOGO)
+    catalogos = []
+    if ORIGEN_CATALOGO.exists():
+        for archivo in sorted(ORIGEN_CATALOGO.glob("*.json")):
+            shutil.copyfile(archivo, DESTINO_CATALOGO / archivo.name)
+            catalogos.append(archivo.stem)
+
     indice = {
         "version": 1,
         "match_arcsec": DISTANCIA_COINCIDENCIA_ARCSEC,
@@ -192,6 +202,7 @@ def main() -> None:
         print(f"  {e['file']}: {e['target']} · {e['collection']} · {e['frames']} cuadros")
     print(f"Fotometría exportada a {DESTINO_FOTOMETRIA}: {fotometria_por_objetivo}")
     print(f"Inventarios exportados a {DESTINO_INVENTARIO}: {inventarios_exportados}")
+    print(f"Catálogos Gaia exportados a {DESTINO_CATALOGO}: {catalogos}")
     print(f"Tamaño total de {PUBLIC_DIR}: {mb_public:.1f} MB")
 
     if mb_public > UMBRAL_AVISO_PUBLIC_MB:

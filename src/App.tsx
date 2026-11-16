@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { fetchFrames } from './api/spherexClient';
+import { fetchCatalog, fetchFrames } from './api/spherexClient';
 import { BottomDock } from './components/BottomDock';
 import { CutoutViewport, HoveredPixelInfo } from './components/CutoutViewport';
 import { ProvenanceBanner } from './components/ProvenanceBanner';
@@ -18,6 +18,7 @@ import { DEFAULT_FLAG_BITS } from './utils/flags';
 import { TRANSLATIONS } from './i18n/translations';
 import {
   BandContrast,
+  CatalogSource,
   ColormapName,
   CompareMode,
   DecodedSpherexFrame,
@@ -180,6 +181,38 @@ export default function App() {
   );
 
   const isLiveQuery = !activeTarget && urlState.sim !== 1;
+
+  // Gaia DR3 reference catalog (cat=1): fetched only when the layer is on, cached per field.
+  const [gaiaCatalog, setGaiaCatalog] = useState<CatalogSource[]>([]);
+  const catalogCacheRef = useRef(new Map<string, CatalogSource[]>());
+  useEffect(() => {
+    if (urlState.cat !== 1 || urlState.sim === 1) return;
+    const key = activeTarget
+      ? `target:${activeTarget.id}`
+      : `${urlState.ra.toFixed(4)},${urlState.dec.toFixed(4)},${urlState.size}`;
+    const cached = catalogCacheRef.current.get(key);
+    if (cached) {
+      setGaiaCatalog(cached);
+      return;
+    }
+    setGaiaCatalog([]);
+    const controller = new AbortController();
+    fetchCatalog({
+      ra: urlState.ra,
+      dec: urlState.dec,
+      size: urlState.size,
+      targetId: activeTarget?.id ?? null,
+      signal: controller.signal,
+    })
+      .then((sources) => {
+        catalogCacheRef.current.set(key, sources);
+        setGaiaCatalog(sources);
+      })
+      .catch((err: unknown) => {
+        if (!controller.signal.aborted) console.warn('Gaia DR3 catalog unavailable:', err);
+      });
+    return () => controller.abort();
+  }, [urlState.cat, urlState.sim, urlState.ra, urlState.dec, urlState.size, activeTarget]);
 
   const availableCollections = useMemo(
     () => collectionsForTarget(activeTarget, activeCollection),
@@ -510,7 +543,9 @@ export default function App() {
           onZoomChange={setZoom}
           onPanChange={(x, y) => setPan({ x, y })}
           flagBits={queryResult.flag_bits}
-          catalogSources={queryResult.catalog_sources}
+          catalogSources={
+            queryResult.catalog_sources.length > 0 ? queryResult.catalog_sources : gaiaCatalog
+          }
           activeTarget={activeTarget}
           pixelScaleArcsec={queryResult.pixel_scale_arcsec}
           sizeArcsec={urlState.size}

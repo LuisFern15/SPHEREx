@@ -616,3 +616,42 @@ export async function fetchPhotometry(params: {
     return fetchStaticPhotometryFile(target, collection, signal);
   }
 }
+
+interface CatalogResponse {
+  catalog_sources?: CatalogSource[];
+}
+
+/**
+ * Gaia DR3 reference catalog for the field (cat=1 layer).
+ * Uses /api/catalog; without a backend, preset targets read public/catalogo/<target>.json.
+ */
+export async function fetchCatalog(params: {
+  ra: number;
+  dec: number;
+  size: number;
+  targetId?: string | null;
+  signal?: AbortSignal;
+}): Promise<CatalogSource[]> {
+  const { ra, dec, size, targetId, signal } = params;
+  const search = new URLSearchParams({
+    ra: String(ra),
+    dec: String(dec),
+    size_arcsec: String(size),
+  });
+  if (targetId) search.set('target', targetId);
+
+  try {
+    const res = await fetch(`${API_BASE}/api/catalog?${search.toString()}`, { signal });
+    if (!res.ok || !isJsonResponse(res)) throw new Error(`HTTP ${res.status}`);
+    const data: CatalogResponse = await res.json();
+    return data.catalog_sources ?? [];
+  } catch (apiErr) {
+    if (signal?.aborted || !targetId) throw apiErr;
+    const res = await fetch(`${getStaticBaseUrl()}catalogo/${encodeURIComponent(targetId)}.json`, {
+      signal,
+    });
+    if (!res.ok || !isJsonResponse(res)) throw apiErr;
+    const data: CatalogResponse = await res.json();
+    return data.catalog_sources ?? [];
+  }
+}

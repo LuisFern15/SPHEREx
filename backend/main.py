@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from typing import Optional
 from consulta_viva import consultar_irsa_en_vivo
+from catalogo_gaia import DIR_CATALOGO, catalogo_gaia
 
 import numpy as np
 from astropy.coordinates import SkyCoord
@@ -427,6 +428,33 @@ def get_inventory(target: str = Query(..., min_length=1)):
 
     _CACHE_INVENTARIO[clean_target] = (firma, resumen)
     return resumen
+
+
+@app.get("/api/catalog")
+def get_catalog(
+    ra: Optional[float] = Query(None, ge=0.0, lt=360.0),
+    dec: Optional[float] = Query(None, ge=-90.0, le=90.0),
+    size_arcsec: float = Query(200.0, gt=0.0, le=1200.0),
+    target: Optional[str] = Query(None),
+):
+    """Catálogo de referencia Gaia DR3 del campo (capa cat=1).
+
+    Con `target` se sirve el archivo guardado por `generar_catalogo.py`; con `ra`/`dec` se consulta
+    VizieR (con caché en disco).
+    """
+    if target:
+        archivo = DIR_CATALOGO / f"{Path(target).name}.json"
+        if archivo.exists():
+            return json.loads(archivo.read_text(encoding="utf-8"))
+    if ra is None or dec is None:
+        raise HTTPException(status_code=404, detail="No hay catálogo guardado para ese objetivo; envía ra y dec.")
+    try:
+        return catalogo_gaia(ra, dec, size_arcsec)
+    except ConnectionError as error:
+        logger.warning("Catálogo Gaia no disponible en %.5f, %.5f: %s", ra, dec, error)
+        raise HTTPException(
+            status_code=503, detail="El catálogo Gaia DR3 (VizieR) no respondió. Intenta de nuevo en unos segundos."
+        ) from error
 
 
 @app.get("/api/photometry")
