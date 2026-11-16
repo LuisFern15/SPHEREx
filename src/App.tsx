@@ -362,6 +362,14 @@ export default function App() {
       setPlaying(false);
       setZoom(1);
       setPan({ x: 0, y: 0 });
+      // Same coordinates again: the load effect would not re-run, so force a reload.
+      if (
+        Number(ra.toFixed(6)) === urlState.ra &&
+        Number(dec.toFixed(6)) === urlState.dec &&
+        clampFieldSize(size) === urlState.size
+      ) {
+        setRetryNonce((n) => n + 1);
+      }
       setUrlState((prev) => {
         let nextCol = prev.col;
         if (nextTarget) {
@@ -386,7 +394,7 @@ export default function App() {
         };
       });
     },
-    [urlState.ra, urlState.dec]
+    [urlState.ra, urlState.dec, urlState.size]
   );
 
   const handleSelectBand = useCallback(
@@ -627,9 +635,18 @@ export default function App() {
         epochs={epochs}
         timelineFrames={timelineFrames}
         currentIndex={safeIndex}
-        onSelectIndex={(idx) => setUrlState((prev) => ({ ...prev, i: idx }))}
+        onSelectIndex={(idx) => {
+          setPlaying(false);
+          setUrlState((prev) => ({ ...prev, i: idx }));
+        }}
         playing={playing}
-        onTogglePlay={() => setPlaying((p) => !p)}
+        onTogglePlay={() => {
+          // Loop off and parked on the last frame: restart from the beginning.
+          if (!playing && !loop && safeIndex >= timelineFrames.length - 1) {
+            setUrlState((prev) => ({ ...prev, i: 0 }));
+          }
+          setPlaying((p) => !p);
+        }}
         loop={loop}
         onToggleLoop={() => setLoop((l) => !l)}
         speed={urlState.speed}

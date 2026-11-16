@@ -103,6 +103,9 @@ export interface TranslationStrings {
   switchCollectionButton: string;
   tryAnotherCollectionButton: string;
   irsaCoverageLabel: string;
+  autoContrast: string;
+  zoomInLabel: string;
+  zoomOutLabel: string;
 }
 
 export const TRANSLATIONS: Record<Language, TranslationStrings> = {
@@ -212,6 +215,9 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     switchCollectionButton: 'Cambiar a',
     tryAnotherCollectionButton: 'Probar otra colección',
     irsaCoverageLabel: 'Cobertura IRSA (DR1 / QR3)',
+    autoContrast: 'Auto',
+    zoomInLabel: 'Acercar',
+    zoomOutLabel: 'Alejar',
   },
   en: {
     brandTitle: 'SPHEREx Explorer',
@@ -319,5 +325,8 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     switchCollectionButton: 'Switch to',
     tryAnotherCollectionButton: 'Try another collection',
     irsaCoverageLabel: 'IRSA coverage (DR1 / QR3)',
+    autoContrast: 'Auto',
+    zoomInLabel: 'Zoom in',
+    zoomOutLabel: 'Zoom out',
   },
 };

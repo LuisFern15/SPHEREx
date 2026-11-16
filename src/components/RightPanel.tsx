@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Eye, Layers, Pin, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import {
   collectionsForTarget,
@@ -113,8 +113,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'calibration' | 'spectrum' | 'assistant'>('calibration');
 
-  const sliderMinBound = Math.min(-50, Math.floor(min - 20));
-  const sliderMaxBound = Math.max(200, Math.ceil(max + 50));
+  // Stable slider bounds: they only widen when the value leaves the current range,
+  // so the thumb can reach the end instead of the track growing on every change.
+  const sliderMinBoundRef = useRef(-50);
+  const sliderMaxBoundRef = useRef(200);
+  if (min < sliderMinBoundRef.current) sliderMinBoundRef.current = Math.floor(min - 20);
+  if (max > sliderMaxBoundRef.current) sliderMaxBoundRef.current = Math.ceil(max + 50);
+  const sliderMinBound = sliderMinBoundRef.current;
+  const sliderMaxBound = sliderMaxBoundRef.current;
 
   const diffBlocked = Boolean(deltaLambdaInfo?.exceedsHalfChannel && !allowUnsafeDiff);
   const availableCollections = collectionsForTarget(activeTarget, collection);
@@ -236,7 +242,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 onClick={onAutoContrast}
                 className="px-2 py-0.5 rounded border border-slate-700 bg-[#0A0A0A] text-[11px] text-cyan-300 hover:border-cyan-500 transition-colors cursor-pointer"
               >
-                Auto
+                {t.autoContrast}
               </button>
             </div>
 
@@ -325,7 +331,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 <button
                   type="button"
                   onClick={() => onZoomChange(Math.max(0.5, Number((zoom / 1.25).toFixed(2))))}
-                  aria-label="Zoom out"
+                  aria-label={t.zoomOutLabel}
                   className="p-1.5 rounded border border-slate-700 bg-[#0A0A0A] text-slate-300 hover:border-cyan-500 cursor-pointer"
                 >
                   <ZoomOut className="w-3.5 h-3.5" aria-hidden="true" />
@@ -336,7 +342,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 <button
                   type="button"
                   onClick={() => onZoomChange(Math.min(8, Number((zoom * 1.25).toFixed(2))))}
-                  aria-label="Zoom in"
+                  aria-label={t.zoomInLabel}
                   className="p-1.5 rounded border border-slate-700 bg-[#0A0A0A] text-slate-300 hover:border-cyan-500 cursor-pointer"
                 >
                   <ZoomIn className="w-3.5 h-3.5" aria-hidden="true" />

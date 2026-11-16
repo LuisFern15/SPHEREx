@@ -4,6 +4,7 @@ import { TARGET_PRESETS } from '../data/targets';
 import { TranslationStrings } from '../i18n/translations';
 import { Language, TargetPreset } from '../types/spherex';
 import { parseCoordinates } from '../utils/coordinates';
+import { SIZE_OPTIONS } from '../utils/urlHash';
 
 interface TopBarProps {
   t: TranslationStrings;
@@ -22,8 +23,6 @@ interface TopBarProps {
   onChangeSize: (size: number) => void;
   onChangeCollection: (collection: string) => void;
 }
-
-const SIZE_OPTIONS = [100, 150, 200, 250, 300];
 
 export const TopBar: React.FC<TopBarProps> = ({
   t,
