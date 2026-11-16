@@ -1,0 +1,40 @@
+{
+  "target": "epsindib",
+  "total_images": 463,
+  "collections": {
+    "spherex_dr1": {
+      "collection": "spherex_dr1",
+      "images": 343,
+      "date_range": {
+        "start": "2025-04-24",
+        "end": "2026-05-04"
+      },
+      "visits": 8,
+      "by_band": {
+        "1": 48,
+        "2": 69,
+        "3": 63,
+        "4": 46,
+        "5": 60,
+        "6": 57
+      }
+    },
+    "spherex_qr3": {
+      "collection": "spherex_qr3",
+      "images": 120,
+      "date_range": {
+        "start": "2026-09-22",
+        "end": "2026-10-02"
+      },
+      "visits": 1,
+      "by_band": {
+        "1": 0,
+        "2": 24,
+        "3": 36,
+        "4": 0,
+        "5": 24,
+        "6": 36
+      }
+    }
+  }
+}

@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { fetchFrames } from './api/spherexClient';
+import { fetchCatalog, fetchFrames } from './api/spherexClient';
 import { BottomDock } from './components/BottomDock';
 import { CutoutViewport, HoveredPixelInfo } from './components/CutoutViewport';
 import { ProvenanceBanner } from './components/ProvenanceBanner';
 import { RightPanel } from './components/RightPanel';
 import { TopBar } from './components/TopBar';
 import {
-  AVAILABLE_COLLECTIONS,
   DEFAULT_BAND_CONTRAST,
   TARGET_PRESETS,
+  collectionsForTarget,
   dateToJulianYear,
   mjdToJulianYear,
   propagatePosition,
@@ -18,6 +18,7 @@ import { DEFAULT_FLAG_BITS } from './utils/flags';
 import { TRANSLATIONS } from './i18n/translations';
 import {
   BandContrast,
+  CatalogSource,
   ColormapName,
   CompareMode,
   DecodedSpherexFrame,
@@ -169,6 +170,10 @@ export default function App() {
       if (controller.signal.aborted) return;
       setQueryResult(result);
       setLoading(false);
+    }).catch((err) => {
+      if (controller.signal.aborted) return;
+      console.error('fetchFrames failed', err);
+      setLoading(false);
     });
 
     return () => controller.abort();
@@ -179,10 +184,44 @@ export default function App() {
     [urlState.ra, urlState.dec]
   );
 
-  const availableCollections = useMemo(() => {
-    const base: string[] = [...AVAILABLE_COLLECTIONS];
-    return base.includes(activeCollection) ? base : [activeCollection, ...base];
-  }, [activeCollection]);
+  const isLiveQuery = !activeTarget && urlState.sim !== 1;
+
+  // Gaia DR3 reference catalog (cat=1): fetched only when the layer is on, cached per field.
+  const [gaiaCatalog, setGaiaCatalog] = useState<CatalogSource[]>([]);
+  const catalogCacheRef = useRef(new Map<string, CatalogSource[]>());
+  useEffect(() => {
+    if (urlState.cat !== 1 || urlState.sim === 1) return;
+    const key = activeTarget
+      ? `target:${activeTarget.id}`
+      : `${urlState.ra.toFixed(4)},${urlState.dec.toFixed(4)},${urlState.size}`;
+    const cached = catalogCacheRef.current.get(key);
+    if (cached) {
+      setGaiaCatalog(cached);
+      return;
+    }
+    setGaiaCatalog([]);
+    const controller = new AbortController();
+    fetchCatalog({
+      ra: urlState.ra,
+      dec: urlState.dec,
+      size: urlState.size,
+      targetId: activeTarget?.id ?? null,
+      signal: controller.signal,
+    })
+      .then((sources) => {
+        catalogCacheRef.current.set(key, sources);
+        setGaiaCatalog(sources);
+      })
+      .catch((err: unknown) => {
+        if (!controller.signal.aborted) console.warn('Gaia DR3 catalog unavailable:', err);
+      });
+    return () => controller.abort();
+  }, [urlState.cat, urlState.sim, urlState.ra, urlState.dec, urlState.size, activeTarget]);
+
+  const availableCollections = useMemo(
+    () => collectionsForTarget(activeTarget, activeCollection),
+    [activeTarget, activeCollection]
+  );
 
   const epochs = useMemo(
     () => groupFramesIntoEpochs(queryResult.frames, queryResult.flag_bits),
@@ -316,18 +355,39 @@ export default function App() {
     }));
   }, [bandContrasts]);
 
-  const handleSearchCoords = useCallback((ra: number, dec: number, size: number) => {
-    setPlaying(false);
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
-    setUrlState((prev) => ({
-      ...prev,
-      ra: Number(ra.toFixed(6)),
-      dec: Number(dec.toFixed(6)),
-      size: clampFieldSize(size),
-      i: 0,
-    }));
-  }, []);
+  const handleSearchCoords = useCallback(
+    (ra: number, dec: number, size: number) => {
+      const prevTarget = findMatchingTarget(urlState.ra, urlState.dec);
+      const nextTarget = findMatchingTarget(ra, dec);
+      setPlaying(false);
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
+      setUrlState((prev) => {
+        let nextCol = prev.col;
+        if (nextTarget) {
+          const currentColName = colToCollection(prev.col);
+          if (
+            nextTarget.id !== prevTarget?.id ||
+            !nextTarget.collections.includes(currentColName)
+          ) {
+            nextCol = collectionToCol(nextTarget.defaultCollection);
+          }
+        } else {
+          // Manual coordinates always start on DR1 (team decision): it has the most epochs.
+          nextCol = 'dr1';
+        }
+        return {
+          ...prev,
+          ra: Number(ra.toFixed(6)),
+          dec: Number(dec.toFixed(6)),
+          size: clampFieldSize(size),
+          col: nextCol,
+          i: 0,
+        };
+      });
+    },
+    [urlState.ra, urlState.dec]
+  );
 
   const handleSelectBand = useCallback(
     (nextBand: number) => {
@@ -422,7 +482,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#07090E] text-slate-100">
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#0A0A0A] text-slate-100">
       <TopBar
         t={t}
         lang={lang}
@@ -450,8 +510,11 @@ export default function App() {
         provenance={queryResult.provenance}
         loading={loading}
         errorMessage={queryResult.errorMessage}
+        emptyMessage={queryResult.emptyMessage}
         notes={queryResult.notes}
         onRetry={() => setRetryNonce((n) => n + 1)}
+        requestedSize={urlState.size}
+        actualSize={queryResult.query.size_arcsec}
       />
 
       <main className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
@@ -462,7 +525,9 @@ export default function App() {
           refFrame={refFrame}
           provenance={queryResult.provenance}
           loading={loading}
+          isLiveQuery={isLiveQuery}
           errorMessage={queryResult.errorMessage}
+          emptyMessage={queryResult.emptyMessage}
           onRetry={() => setRetryNonce((n) => n + 1)}
           min={activeContrast.min}
           max={activeContrast.max}
@@ -482,7 +547,9 @@ export default function App() {
           onZoomChange={setZoom}
           onPanChange={(x, y) => setPan({ x, y })}
           flagBits={queryResult.flag_bits}
-          catalogSources={queryResult.catalog_sources}
+          catalogSources={
+            queryResult.catalog_sources.length > 0 ? queryResult.catalog_sources : gaiaCatalog
+          }
           activeTarget={activeTarget}
           pixelScaleArcsec={queryResult.pixel_scale_arcsec}
           sizeArcsec={urlState.size}
@@ -539,6 +606,10 @@ export default function App() {
           hoveredPixel={hoveredPixel}
           selectedFrameId={selectedFrameId}
           onSelectFrameId={handleSelectFrameById}
+          ra={urlState.ra}
+          dec={urlState.dec}
+          sizeArcsec={urlState.size}
+          frames={queryResult.frames}
         />
       </main>
 

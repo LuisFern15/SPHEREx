@@ -54,7 +54,9 @@ export interface CatalogSource {
   label: string;
   ra: number;
   dec: number;
-  epoch?: number;
+  epoch?: number; // Julian year of ra/dec (Gaia DR3: 2016.0)
+  pmra?: number | null; // mas/yr, includes cos(dec)
+  pmdec?: number | null; // mas/yr
   note?: string;
   kind: 'target' | 'reference' | 'field';
 }
@@ -71,10 +73,12 @@ export interface FramesQueryResult {
   cached: boolean;
   flag_bits: FlagBitsMap;
   usingDefaultFlagBits: boolean;
+  target?: unknown;
   catalog_sources: CatalogSource[];
   frames: DecodedSpherexFrame[];
   notes: string[];
   errorMessage?: string;
+  emptyMessage?: string;
 }
 
 export interface TargetReferencePosition {
@@ -117,7 +121,9 @@ export interface EpochGroup {
   coaddsByBand: Record<number, DecodedSpherexFrame>;
 }
 
-export type CollectionShortCode = 'qr3' | 'dr1';
+export type CollectionName = 'spherex_qr3' | 'spherex_dr1' | 'spherex_both';
+
+export type CollectionShortCode = 'qr3' | 'dr1' | 'both';
 
 export interface UrlViewerState {
   ra: number;

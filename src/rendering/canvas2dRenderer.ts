@@ -66,9 +66,10 @@ export class Canvas2DRenderer implements CutoutRenderer {
         }
 
         if (!Number.isFinite(val)) {
-          out[dstIdx] = 15;
-          out[dstIdx + 1] = 23;
-          out[dstIdx + 2] = 42;
+          // No-data pixels: opaque neutral gray, so they never read as sky
+          out[dstIdx] = 22;
+          out[dstIdx + 1] = 22;
+          out[dstIdx + 2] = 22;
           out[dstIdx + 3] = 255;
           continue;
         }
@@ -93,8 +94,8 @@ export class Canvas2DRenderer implements CutoutRenderer {
 
     // Clear main canvas
     ctx.save();
-    ctx.fillStyle = '#07090E';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Transparent outside the cutout so the Milky Way backdrop shows through
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const transform = computeViewportTransform(
       canvas.width,

@@ -8,8 +8,11 @@ interface ProvenanceBannerProps {
   provenance: ProvenanceState;
   loading: boolean;
   errorMessage?: string;
+  emptyMessage?: string;
   notes: string[];
   onRetry: () => void;
+  requestedSize?: number;
+  actualSize?: number;
 }
 
 export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
@@ -17,8 +20,11 @@ export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
   provenance,
   loading,
   errorMessage,
+  emptyMessage,
   notes,
   onRetry,
+  requestedSize,
+  actualSize,
 }) => {
   let glyph = '●';
   let label = t.provenanceLive;
@@ -32,6 +38,12 @@ export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
     description = t.provenanceCachedDesc;
     containerCls = 'bg-amber-950/30 border-amber-800/60 text-amber-100';
     badgeCls = 'text-amber-400';
+  } else if (provenance === 'error' && emptyMessage) {
+    glyph = '○';
+    label = t.provenanceEmpty;
+    description = emptyMessage;
+    containerCls = 'bg-slate-900/80 border-slate-700 text-slate-200';
+    badgeCls = 'text-slate-300';
   } else if (provenance === 'error') {
     glyph = '✖';
     label = t.provenanceError;
@@ -46,6 +58,14 @@ export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
     badgeCls = 'text-amber-300';
   }
 
+  // Stored snapshots have a fixed field: tell the user when the requested size does not apply.
+  const showSizeMismatchNote =
+    !loading &&
+    provenance === 'cached' &&
+    requestedSize !== undefined &&
+    actualSize !== undefined &&
+    Math.abs(requestedSize - actualSize) > 1;
+
   return (
     <div
       className={`border-b px-4 py-1.5 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0 ${containerCls}`}
@@ -58,8 +78,20 @@ export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
         <span className="text-slate-400" aria-hidden="true">
           ·
         </span>
-        <span className="truncate">{loading ? 'Consultando / Querying SPHEREx...' : description}</span>
-        {notes.length > 0 && (
+        <span className="truncate">
+          {loading ? t.queryingBackend : description}
+        </span>
+        {showSizeMismatchNote && actualSize !== undefined && (
+          <>
+            <span className="text-slate-500" aria-hidden="true">
+              ·
+            </span>
+            <span className="text-slate-300 whitespace-nowrap">
+              {t.cachedSizeMismatchNote.replace('{n}', String(Math.round(actualSize)))}
+            </span>
+          </>
+        )}
+        {!loading && notes.length > 0 && (
           <>
             <span className="text-slate-500" aria-hidden="true">
               ·
@@ -69,7 +101,7 @@ export const ProvenanceBanner: React.FC<ProvenanceBannerProps> = ({
         )}
       </div>
 
-      {provenance === 'error' && (
+      {provenance === 'error' && !emptyMessage && (
         <button
           type="button"
           onClick={onRetry}

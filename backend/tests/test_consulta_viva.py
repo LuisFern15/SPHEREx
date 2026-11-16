@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import io
 import sys
+import time
 from pathlib import Path
 from unittest.mock import patch
 
@@ -83,3 +84,36 @@ def test_consulta_viva_sin_cobertura_devuelve_404():
     with patch.object(consulta_viva.Irsa, "query_sia", return_value=[]):
         r = client.get("/api/frames", params={"ra": 12.34, "dec": -45.67, "collection": "spherex_dr1", "live": "true"})
         assert r.status_code == 404
+
+
+def test_consulta_viva_parcial_se_guarda_en_cache():
+    """Una consulta que agota el presupuesto de tiempo devuelve lo cargado y queda en caché."""
+    consulta_viva._CACHE_RESPUESTAS_VIVAS.clear()
+    fits_bytes = _crear_fits_sintetico_bytes(ra=150.0, dec=10.0)
+    filas_sia = [
+        {"access_url": "https://irsa.example.org/rapido_d3.fits", "energy_bandpassname": "SPHEREx-D3", "t_min": 60850.5},
+        {"access_url": "https://irsa.example.org/lento_d4.fits", "energy_bandpassname": "SPHEREx-D4", "t_min": 60900.5},
+    ]
+    llamadas = {"n": 0}
+
+    def bajar_falso(*args: object, **kwargs: object) -> bytes:
+        """Responde de inmediato la primera descarga y tarda más que el presupuesto en la segunda."""
+        llamadas["n"] += 1
+        if llamadas["n"] > 1:
+            time.sleep(3.0)
+        return fits_bytes
+
+    client = TestClient(app)
+    params = {"ra": 150.0, "dec": 10.0, "collection": "spherex_dr1", "live": "true"}
+    with patch.object(consulta_viva.Irsa, "query_sia", return_value=filas_sia),          patch.object(consulta_viva, "bajar_recorte", side_effect=bajar_falso),          patch.object(consulta_viva, "PRESUPUESTO_VIVO_SEGUNDOS", 1.0):
+        r1 = client.get("/api/frames", params=params)
+        assert r1.status_code == 200
+        body = r1.json()
+        assert body["provenance"] == "live"
+        assert len(body["frames"]) == 1
+        assert "parcial" in body["notes"][0]
+        # La segunda llamada sale de la caché y conserva la nota de consulta parcial.
+        r2 = client.get("/api/frames", params=params)
+        assert r2.status_code == 200
+        assert r2.json()["provenance"] == "cached"
+        assert "parcial" in r2.json()["notes"][0]

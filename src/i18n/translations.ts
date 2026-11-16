@@ -7,15 +7,30 @@ export interface TranslationStrings {
   invalidCoords: string;
   fieldSizeLabel: string;
   collectionLabel: string;
+  collectionBoth: string;
   targetsLabel: string;
   propagatedLabel: string;
   provenanceLive: string;
   provenanceCached: string;
   provenanceError: string;
+  provenanceEmpty: string;
   provenanceSimulated: string;
   provenanceLiveDesc: string;
   provenanceCachedDesc: string;
   provenanceSimulatedDesc: string;
+  queryingBackend: string;
+  queryingLiveIrsa: string;
+  cachedSizeMismatchNote: string;
+  framesLoadedLabel: string;
+  skyPanelTitle: string;
+  skyZoomTarget: string;
+  skySphereView: string;
+  skyOpenIrsa: string;
+  skyLoading: string;
+  skyLoadError: string;
+  skyCustomTarget: string;
+  skyTargetMarkerNote: string;
+  loadingData: string;
   retryButton: string;
   devSimToggle: string;
   devSimWarning: string;
@@ -81,10 +96,12 @@ export interface TranslationStrings {
   defaultFlagBitsWarning: string;
   transientFlagHelp: string;
   sourceFlagHelp: string;
+  infoFlagsOverlayNote: string;
   predictedOutOfBoundsLabel: string;
   emptyCollectionTitle: string;
   emptyCollectionBody: string;
   switchCollectionButton: string;
+  tryAnotherCollectionButton: string;
   irsaCoverageLabel: string;
 }
 
@@ -96,15 +113,30 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     invalidCoords: 'Formato inválido. Usa grados decimales o sexagesimal (h/d, espacios o :).',
     fieldSizeLabel: 'Campo',
     collectionLabel: 'Colección',
+    collectionBoth: 'Ambas',
     targetsLabel: 'Objetivos',
     propagatedLabel: 'Propagado a fecha actual',
     provenanceLive: 'En vivo',
     provenanceCached: 'Guardado',
     provenanceError: 'Error',
+    provenanceEmpty: 'Sin datos',
     provenanceSimulated: 'Simulado (dev)',
     provenanceLiveDesc: 'Datos servidos en directo desde el backend SPHEREx / IRSA.',
     provenanceCachedDesc: 'Mostrando datos reales guardados en caché local del backend.',
     provenanceSimulatedDesc: 'Modo de desarrollo activo: datos sintéticos (no son observaciones reales).',
+    queryingBackend: 'Consultando datos SPHEREx…',
+    queryingLiveIrsa: 'Consultando IRSA en vivo… puede tardar hasta un minuto',
+    cachedSizeMismatchNote: 'Datos guardados de {n}″: el campo no cambia',
+    framesLoadedLabel: 'Cuadros cargados',
+    skyPanelTitle: 'Cielo (IRSA)',
+    skyZoomTarget: 'Acercar al objetivo',
+    skySphereView: 'Vista de esfera',
+    skyOpenIrsa: 'Abrir en IRSA',
+    skyLoading: 'Cargando visor del cielo…',
+    skyLoadError: 'No se pudo cargar el visor del cielo de IRSA',
+    skyCustomTarget: 'Coordenadas',
+    skyTargetMarkerNote: 'Punto verde: posición del objeto · círculo: campo del recorte',
+    loadingData: 'Cargando datos…',
     retryButton: 'Reintentar',
     devSimToggle: 'Simulador (dev)',
     devSimWarning: 'Solo desarrollo: dibuja marca SIMULADO sobre la imagen.',
@@ -169,14 +201,16 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     saturationAlertLabel: 'Saturación detectada',
     persistenceAlertLabel: 'Persistencia detectada',
     wiseInvisibleNote:
-      'Nota: Si el objeto no destaca sobre el fondo (probable en exposiciones individuales de WISE 0855), activa "Épocas (suma por detector)" en Banda 5 o 6.',
+      'Si no ves el objeto sobre el fondo (lo normal en una sola exposición), activa "Épocas (suma por detector)" y prueba la banda 6.',
     defaultFlagBitsWarning: 'Bits de banderas por defecto, sin confirmar con la cabecera',
     transientFlagHelp: 'TRANSIENT: rayo cósmico o derrame de carga de una estrella saturada.',
     sourceFlagHelp: 'SOURCE: píxeles de fuentes catalogadas conocidas (no es un defecto del detector).',
+    infoFlagsOverlayNote: 'SOURCE y otras banderas informativas se listan en la ficha, no en la capa.',
     predictedOutOfBoundsLabel: 'Posición predicha fuera del recorte',
     emptyCollectionTitle: 'Sin imágenes en esta colección',
     emptyCollectionBody: 'No hay exposiciones disponibles en la colección seleccionada para esta coordenada.',
     switchCollectionButton: 'Cambiar a',
+    tryAnotherCollectionButton: 'Probar otra colección',
     irsaCoverageLabel: 'Cobertura IRSA (DR1 / QR3)',
   },
   en: {
@@ -186,15 +220,30 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     invalidCoords: 'Invalid coordinate format. Use decimal degrees or sexagesimal (h/d, spaces, or :).',
     fieldSizeLabel: 'FOV',
     collectionLabel: 'Collection',
+    collectionBoth: 'Both',
     targetsLabel: 'Targets',
     propagatedLabel: 'Propagated to current date',
     provenanceLive: 'Live',
     provenanceCached: 'Cached',
     provenanceError: 'Error',
+    provenanceEmpty: 'No data',
     provenanceSimulated: 'Simulated (dev)',
     provenanceLiveDesc: 'Live cutout data served from SPHEREx / IRSA backend.',
     provenanceCachedDesc: 'Displaying real cutout data from local backend cache.',
     provenanceSimulatedDesc: 'Developer simulation mode active: synthetic data (not real observations).',
+    queryingBackend: 'Querying SPHEREx data…',
+    queryingLiveIrsa: 'Querying IRSA live… this can take up to a minute',
+    cachedSizeMismatchNote: 'Stored data of {n}″: field size does not change',
+    framesLoadedLabel: 'Frames loaded',
+    skyPanelTitle: 'Sky (IRSA)',
+    skyZoomTarget: 'Zoom to target',
+    skySphereView: 'Sphere view',
+    skyOpenIrsa: 'Open in IRSA',
+    skyLoading: 'Loading sky viewer…',
+    skyLoadError: 'Could not load the IRSA sky viewer',
+    skyCustomTarget: 'Coordinates',
+    skyTargetMarkerNote: 'Green dot: target position · circle: cutout field',
+    loadingData: 'Loading data…',
     retryButton: 'Retry',
     devSimToggle: 'Simulator (dev)',
     devSimWarning: 'Dev only: renders SIMULATED watermark directly over cutout.',
@@ -259,14 +308,16 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     saturationAlertLabel: 'Saturation flagged',
     persistenceAlertLabel: 'Persistence flagged',
     wiseInvisibleNote:
-      'Note: If the target does not stand out above background noise (expected in single WISE 0855 frames), enable "Epochs (detector co-add)" in Band 5 or 6.',
+      'If the object does not stand out from the background (normal in a single exposure), turn on "Epochs (detector co-add)" and try Band 6.',
     defaultFlagBitsWarning: 'Default flag bits, unconfirmed against FITS header',
     transientFlagHelp: 'TRANSIENT: cosmic ray hit or charge spillover from a saturated star.',
     sourceFlagHelp: 'SOURCE: pixels belonging to known cataloged sources (not a detector defect).',
+    infoFlagsOverlayNote: 'SOURCE and other informational flags are listed in the frame sheet, not drawn on the overlay.',
     predictedOutOfBoundsLabel: 'Predicted position outside cutout',
     emptyCollectionTitle: 'No images in this collection',
     emptyCollectionBody: 'No exposures are available in the selected collection for this sky position.',
     switchCollectionButton: 'Switch to',
+    tryAnotherCollectionButton: 'Try another collection',
     irsaCoverageLabel: 'IRSA coverage (DR1 / QR3)',
   },
 };

@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
-import { mjdToJulianYear, propagatePosition } from '../data/targets';
+import {
+  collectionsForTarget,
+  formatIrsaCoverage,
+  mjdToJulianYear,
+  propagatePosition,
+} from '../data/targets';
 import { TranslationStrings } from '../i18n/translations';
 import { Canvas2DRenderer } from '../rendering/canvas2dRenderer';
 import { CutoutRenderer, ViewportTransform } from '../rendering/cutoutRenderer';
@@ -14,7 +19,12 @@ import {
   ProvenanceState,
   TargetPreset,
 } from '../types/spherex';
-import { pixelToSkyLinear, resolvePredictedPixel, skyToPixelLinear } from '../utils/coordinates';
+import {
+  equatorialToGalactic,
+  pixelToSkyLinear,
+  resolvePredictedPixel,
+  skyToPixelLinear,
+} from '../utils/coordinates';
 import { DecodedFlagEntry, decodePixelFlags } from '../utils/flags';
 
 export interface HoveredPixelInfo {
@@ -33,7 +43,9 @@ interface CutoutViewportProps {
   refFrame: DecodedSpherexFrame | null;
   provenance: ProvenanceState;
   loading: boolean;
+  isLiveQuery?: boolean;
   errorMessage?: string;
+  emptyMessage?: string;
   onRetry: () => void;
   min: number;
   max: number;
@@ -70,7 +82,9 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
   refFrame,
   provenance,
   loading,
+  isLiveQuery = false,
   errorMessage,
+  emptyMessage,
   onRetry,
   min,
   max,
@@ -136,6 +150,30 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
   const isDifference =
     compareMode === 'diff' && Boolean(refFrame) && (!deltaLambdaBlocked || allowUnsafeDiff);
 
+  // Milky Way backdrop (ESO/S. Brunier, galactic plate carrée, l = 0 at center, l grows to the left),
+  // shifted so the cutout's sky position sits behind the image. Keeps the last position while loading.
+  const lastGalacticRef = useRef<{ l: number; b: number } | null>(null);
+  const backdropCenter = useMemo(() => {
+    const crval = displayedFrame?.wcs?.crval;
+    if (crval && Number.isFinite(crval[0]) && Number.isFinite(crval[1])) {
+      lastGalacticRef.current = equatorialToGalactic(crval[0], crval[1]);
+    }
+    return lastGalacticRef.current;
+  }, [displayedFrame]);
+  const backdropStyle = useMemo<React.CSSProperties>(() => {
+    const MAP_W = 4000;
+    const MAP_H = 2000;
+    const { l, b } = backdropCenter ?? { l: 0, b: 0 };
+    const fx = ((0.5 - l / 360) % 1 + 1) % 1;
+    const fy = 0.5 - b / 180;
+    return {
+      backgroundSize: `${MAP_W}px ${MAP_H}px`,
+      backgroundPosition: `${Math.round(canvasDims.width / 2 - fx * MAP_W)}px ${Math.round(
+        canvasDims.height / 2 - fy * MAP_H
+      )}px`,
+    };
+  }, [backdropCenter, canvasDims.width, canvasDims.height]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const renderer = rendererRef.current;
@@ -147,8 +185,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     if (!displayedFrame) {
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.fillStyle = '#07090E';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
       setTransform(null);
       return;
@@ -250,7 +287,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     };
   }, [displayedFrame, transform, activeTarget]);
 
-  // Flagged pixel overlay elements
+  // Flagged pixel overlay elements (only saturation, persistence, and bad; omit source/other)
   const flagOverlayCells = useMemo(() => {
     if (!showFlags || !displayedFrame || !transform) return [];
     const [imgH, imgW] = displayedFrame.shape;
@@ -259,7 +296,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       sx: number;
       sy: number;
       size: number;
-      kind: 'saturation' | 'persistence' | 'bad' | 'source' | 'other';
+      kind: 'saturation' | 'persistence' | 'bad';
     }[] = [];
 
     for (let y = 0; y < imgH; y++) {
@@ -269,11 +306,12 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
         const active = decodePixelFlags(mask, flagBits);
         if (active.length === 0) continue;
 
-        let chosenKind: 'saturation' | 'persistence' | 'bad' | 'source' | 'other' = 'other';
+        let chosenKind: 'saturation' | 'persistence' | 'bad' | null = null;
         if (active.some((f) => f.category === 'saturation')) chosenKind = 'saturation';
         else if (active.some((f) => f.category === 'persistence')) chosenKind = 'persistence';
         else if (active.some((f) => f.category === 'bad')) chosenKind = 'bad';
-        else if (active.some((f) => f.category === 'source')) chosenKind = 'source';
+
+        if (!chosenKind) continue;
 
         const sx = transform.drawX + x * transform.pixelSize;
         const sy = transform.drawY + (imgH - 1 - y) * transform.pixelSize;
@@ -295,8 +333,22 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     const [imgH, imgW] = displayedFrame.shape;
     const pts: { id: string; label: string; sx: number; sy: number; kind: CatalogSource['kind'] }[] = [];
 
+    // Carry catalog positions (Gaia DR3: J2016.0) to this frame's date with their proper motion.
+    const frameYear = 2000 + (displayedFrame.mjd - 51544.5) / 365.25;
     for (const src of catalogSources) {
-      const px = skyToPixelLinear(src.ra, src.dec, displayedFrame.wcs);
+      let ra = src.ra;
+      let dec = src.dec;
+      if (src.epoch !== undefined && Number.isFinite(frameYear)) {
+        const dtYears = frameYear - src.epoch;
+        const cosDec = Math.cos((src.dec * Math.PI) / 180);
+        if (src.pmra != null && Math.abs(cosDec) > 1e-6) {
+          ra += (src.pmra * dtYears) / 3.6e6 / cosDec;
+        }
+        if (src.pmdec != null) {
+          dec += (src.pmdec * dtYears) / 3.6e6;
+        }
+      }
+      const px = skyToPixelLinear(ra, dec, displayedFrame.wcs);
       if (!px) continue;
       if (px[0] < -1 || px[0] > imgW || px[1] < -1 || px[1] > imgH) continue;
       const scr = toScreenCoords(px[0], px[1], imgH);
@@ -306,6 +358,19 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     }
     return pts;
   }, [showCatalog, displayedFrame, transform, catalogSources]);
+
+  const fallbackCollection = useMemo(() => {
+    if (activeTarget) {
+      if (
+        activeCollection !== 'spherex_both' &&
+        activeTarget.collections.includes('spherex_both')
+      ) {
+        return 'spherex_both';
+      }
+      return activeTarget.collections.find((c) => c !== activeCollection) ?? null;
+    }
+    return activeCollection === 'spherex_both' ? 'spherex_dr1' : 'spherex_both';
+  }, [activeTarget, activeCollection]);
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (dragging && dragStartRef.current) {
@@ -358,6 +423,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       ref={containerRef}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
+        if ((e.target as HTMLElement).closest('button, a, input, select, textarea')) return;
         setDragging(true);
         dragStartRef.current = { x: e.clientX, y: e.clientY, panX, panY };
       }}
@@ -372,11 +438,20 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       }}
       onPointerMove={handlePointerMove}
       onWheel={handleWheel}
-      className={`relative flex-1 bg-[#07090E] overflow-hidden select-none ${
+      className={`relative flex-1 bg-[#050505] overflow-hidden select-none ${
         dragging ? 'cursor-grabbing' : 'cursor-crosshair'
       }`}
     >
-      <canvas ref={canvasRef} className="block w-full h-full" />
+      <div className="sky-backdrop" style={backdropStyle} aria-hidden="true" />
+      <canvas ref={canvasRef} className="relative block w-full h-full" />
+
+      {backdropCenter && (
+        <div className="absolute bottom-3 right-3 pointer-events-none text-[10px] font-mono tabular-nums text-slate-500">
+          {lang === 'es' ? 'Fondo: Vía Láctea' : 'Background: Milky Way'} · l {backdropCenter.l.toFixed(1)}° b{' '}
+          {backdropCenter.b >= 0 ? '+' : ''}
+          {backdropCenter.b.toFixed(1)}° · ESO/S. Brunier (CC BY 4.0)
+        </div>
+      )}
 
       {/* Synchronized SVG Overlay */}
       {displayedFrame && transform && (
@@ -417,25 +492,11 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
                 />
               );
             }
-            if (cell.kind === 'bad') {
-              return (
-                <g key={cell.key} stroke="#E879F9" strokeWidth={1.2}>
-                  <line x1={cell.sx + 2} y1={cell.sy + 2} x2={cell.sx + cell.size - 2} y2={cell.sy + cell.size - 2} />
-                  <line x1={cell.sx + cell.size - 2} y1={cell.sy + 2} x2={cell.sx + 2} y2={cell.sy + cell.size - 2} />
-                </g>
-              );
-            }
             return (
-              <rect
-                key={cell.key}
-                x={cell.sx + 1}
-                y={cell.sy + 1}
-                width={Math.max(2, cell.size - 2)}
-                height={Math.max(2, cell.size - 2)}
-                fill="none"
-                stroke="rgba(34, 211, 238, 0.55)"
-                strokeWidth={1}
-              />
+              <g key={cell.key} stroke="#E879F9" strokeWidth={1.2}>
+                <line x1={cell.sx + 2} y1={cell.sy + 2} x2={cell.sx + cell.size - 2} y2={cell.sy + cell.size - 2} />
+                <line x1={cell.sx + cell.size - 2} y1={cell.sy + 2} x2={cell.sx + 2} y2={cell.sy + cell.size - 2} />
+              </g>
             );
           })}
 
@@ -467,7 +528,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
           {showReticles && reticles && (
             <>
               {reticles.queryScreen && (
-                <g stroke="#06B6D4" strokeWidth={1.5}>
+                <g stroke="#EF4444" strokeWidth={1.5}>
                   <line
                     x1={reticles.queryScreen.x - 16}
                     y1={reticles.queryScreen.y}
@@ -517,7 +578,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
                   <polygon
                     points="8,0 -6,-6 -3,0 -6,6"
                     fill="#FBBF24"
-                    stroke="#07090E"
+                    stroke="#0A0A0A"
                     strokeWidth={0.8}
                   />
                 </g>
@@ -554,7 +615,7 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
       )}
 
       {/* Top-Left HUD: Scale & Active Mode */}
-      <div className="absolute top-3 left-3 pointer-events-none flex flex-col gap-1 text-[11px] font-mono tabular-nums bg-[#0B0F17]/85 border border-slate-800 px-2.5 py-1.5 rounded">
+      <div className="absolute top-3 left-3 pointer-events-none flex flex-col gap-1 text-[11px] font-mono tabular-nums bg-[#121212]/85 border border-slate-800 px-2.5 py-1.5 rounded">
         <div className="text-slate-200 flex items-center gap-2">
           <span>
             FOV {sizeArcsec}&Prime; · {pixelScaleArcsec.toFixed(2)}&Prime;/px
@@ -573,8 +634,8 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
 
       {/* Bottom-Left HUD: Reticle Legend */}
       {showReticles && displayedFrame && (
-        <div className="absolute bottom-3 left-3 pointer-events-none flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] bg-[#0B0F17]/85 border border-slate-800 px-2.5 py-1.5 rounded">
-          <span className="inline-flex items-center gap-1.5 text-cyan-300">
+        <div className="absolute bottom-3 left-3 pointer-events-none flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] bg-[#121212]/85 border border-slate-800 px-2.5 py-1.5 rounded">
+          <span className="inline-flex items-center gap-1.5 text-red-400">
             <span className="font-mono font-bold">+</span>
             <span>{t.reticleFixedLegend}</span>
           </span>
@@ -591,10 +652,24 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
         </div>
       )}
 
+      {/* Loading Overlay */}
+      {loading && (
+        <div
+          className="absolute inset-0 flex items-center justify-center p-6 bg-[#0A0A0A]/75 pointer-events-none"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="border border-slate-700 bg-[#1A1A1A]/95 rounded px-4 py-2.5 flex items-center gap-2.5 text-xs text-cyan-300 font-mono">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" aria-hidden="true" />
+            <span>{isLiveQuery ? t.queryingLiveIrsa : t.loadingData}</span>
+          </div>
+        </div>
+      )}
+
       {/* Explicit Error or Empty State (Never a blank unexplained canvas) */}
-      {!loading && provenance === 'error' && (
-        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#07090E]/90">
-          <div className="max-w-md border border-rose-800/70 bg-[#0F141F] rounded p-5 flex flex-col gap-3">
+      {!loading && provenance === 'error' && !emptyMessage && (
+        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#0A0A0A]/90">
+          <div className="max-w-md border border-rose-800/70 bg-[#1A1A1A] rounded p-5 flex flex-col gap-3">
             <div className="text-sm font-semibold text-rose-300">
               ✖ {t.provenanceError}
             </div>
@@ -620,40 +695,73 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
         </div>
       )}
 
+      {!loading && provenance === 'error' && emptyMessage && (
+        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#0A0A0A]/90">
+          <div className="max-w-md border border-slate-700 bg-[#1A1A1A] rounded p-5 flex flex-col gap-3">
+            <div className="text-sm font-semibold text-slate-200">
+              {t.emptyCollectionTitle} ({activeCollection})
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">{emptyMessage}</p>
+            {activeTarget && (
+              <div className="text-[11px] font-mono tabular-nums text-slate-400">
+                {t.irsaCoverageLabel}:{' '}
+                {formatIrsaCoverage(
+                  activeTarget,
+                  collectionsForTarget(activeTarget, activeCollection),
+                  t
+                )}
+              </div>
+            )}
+            {fallbackCollection && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => onSwitchCollection(fallbackCollection)}
+                  className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-xs font-semibold rounded transition-colors cursor-pointer"
+                >
+                  {t.tryAnotherCollectionButton}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {!loading && provenance !== 'error' && totalFramesCount === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#07090E]/90">
-          <div className="max-w-md border border-amber-700/70 bg-[#0F141F] rounded p-5 flex flex-col gap-3">
-            <div className="text-sm font-semibold text-amber-300">
-              ▲ {t.emptyCollectionTitle} ({activeCollection})
+        <div className="absolute inset-0 flex items-center justify-center p-6 bg-[#0A0A0A]/90">
+          <div className="max-w-md border border-slate-700 bg-[#1A1A1A] rounded p-5 flex flex-col gap-3">
+            <div className="text-sm font-semibold text-slate-200">
+              {t.emptyCollectionTitle} ({activeCollection})
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">{t.emptyCollectionBody}</p>
             {activeTarget && (
               <div className="text-[11px] font-mono tabular-nums text-slate-400">
-                {t.irsaCoverageLabel}: DR1 {activeTarget.irsaCoverage.dr1} · QR3{' '}
-                {activeTarget.irsaCoverage.qr3}
+                {t.irsaCoverageLabel}:{' '}
+                {formatIrsaCoverage(
+                  activeTarget,
+                  collectionsForTarget(activeTarget, activeCollection),
+                  t
+                )}
               </div>
             )}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() =>
-                  onSwitchCollection(
-                    activeCollection === 'spherex_qr3' ? 'spherex_dr1' : 'spherex_qr3'
-                  )
-                }
-                className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-xs font-semibold rounded transition-colors cursor-pointer"
-              >
-                {t.switchCollectionButton}{' '}
-                {activeCollection === 'spherex_qr3' ? 'spherex_dr1' : 'spherex_qr3'}
-              </button>
-            </div>
+            {fallbackCollection && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => onSwitchCollection(fallbackCollection)}
+                  className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-xs font-semibold rounded transition-colors cursor-pointer"
+                >
+                  {t.tryAnotherCollectionButton}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {!loading && provenance !== 'error' && totalFramesCount > 0 && !displayedFrame && (
         <div className="absolute inset-0 flex items-center justify-center p-6 pointer-events-none">
-          <div className="border border-slate-800 bg-[#0F141F]/95 rounded px-4 py-3 text-xs text-slate-300">
+          <div className="border border-slate-800 bg-[#1A1A1A]/95 rounded px-4 py-3 text-xs text-slate-300">
             {t.noDataTitle}
           </div>
         </div>

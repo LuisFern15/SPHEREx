@@ -62,7 +62,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   };
 
   return (
-    <header className="bg-[#0B0F17] border-b border-slate-800 px-4 py-2.5 flex flex-col gap-2 shrink-0">
+    <header className="bg-[#121212] border-b border-slate-800 px-4 py-2.5 flex flex-col gap-2 shrink-0">
       {/* Row 1: Brand, Coordinate Search, FOV Size, Dev Sim Toggle, Language */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2.5 shrink-0">
@@ -86,7 +86,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               }}
               placeholder={t.searchPlaceholder}
               aria-label={t.searchPlaceholder}
-              className="w-full bg-[#07090E] border border-slate-700 focus:border-cyan-500 rounded px-3 py-1.5 text-xs font-mono tabular-nums text-slate-100 placeholder-slate-500 outline-none transition-colors"
+              className="w-full bg-[#0A0A0A] border border-slate-700 focus:border-cyan-500 rounded px-3 py-1.5 text-xs font-mono tabular-nums text-slate-100 placeholder-slate-500 outline-none transition-colors"
             />
           </div>
 
@@ -96,7 +96,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               value={size}
               onChange={(e) => onChangeSize(Number(e.target.value))}
               aria-label={t.fieldSizeLabel}
-              className="bg-[#07090E] border border-slate-700 focus:border-cyan-500 rounded px-2 py-1.5 text-xs font-mono tabular-nums text-slate-100 outline-none"
+              className="bg-[#0A0A0A] border border-slate-700 focus:border-cyan-500 rounded px-2 py-1.5 text-xs font-mono tabular-nums text-slate-100 outline-none"
             >
               {SIZE_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
@@ -112,11 +112,11 @@ export const TopBar: React.FC<TopBarProps> = ({
               value={collection}
               onChange={(e) => onChangeCollection(e.target.value)}
               aria-label={t.collectionLabel}
-              className="bg-[#07090E] border border-slate-700 focus:border-cyan-500 rounded px-2 py-1.5 text-xs font-mono text-slate-100 outline-none max-w-[175px]"
+              className="bg-[#0A0A0A] border border-slate-700 focus:border-cyan-500 rounded px-2 py-1.5 text-xs font-mono text-slate-100 outline-none max-w-[175px]"
             >
               {availableCollections.map((col) => (
                 <option key={col} value={col}>
-                  {col}
+                  {col === 'spherex_both' ? t.collectionBoth : col}
                 </option>
               ))}
             </select>
@@ -139,7 +139,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-mono border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               simMode
                 ? 'bg-amber-500/15 border-amber-500/60 text-amber-300'
-                : 'bg-[#07090E] border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600'
+                : 'bg-[#0A0A0A] border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600'
             }`}
           >
             <Terminal className="w-3.5 h-3.5" aria-hidden="true" />
@@ -149,7 +149,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <button
             type="button"
             onClick={onToggleLang}
-            className="px-2.5 py-1.5 rounded text-xs font-mono border border-slate-700 bg-[#07090E] text-slate-200 hover:border-cyan-500 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="px-2.5 py-1.5 rounded text-xs font-mono border border-slate-700 bg-[#0A0A0A] text-slate-200 hover:border-cyan-500 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             aria-label="Switch language ES/EN"
           >
             {lang === 'es' ? 'ES / EN' : 'EN / ES'}
@@ -178,7 +178,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                   isActive
                     ? 'bg-cyan-500/15 border-cyan-500 text-cyan-200'
-                    : 'bg-[#0F141F] border-slate-800 text-slate-300 hover:border-slate-600 hover:text-white'
+                    : 'bg-[#1A1A1A] border-slate-800 text-slate-300 hover:border-slate-600 hover:text-white'
                 }`}
               >
                 {label}

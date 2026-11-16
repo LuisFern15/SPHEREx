@@ -6,7 +6,7 @@ import {
   Play,
   Repeat,
 } from 'lucide-react';
-import { SPHEREX_BANDS } from '../data/targets';
+import { SPHEREX_BANDS, collectionsForTarget, formatIrsaCoverage } from '../data/targets';
 import { TranslationStrings } from '../i18n/translations';
 import {
   DecodedSpherexFrame,
@@ -76,7 +76,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
   const hasPersist = frameFlagsSummary.some((f) => f.category === 'persistence');
 
   return (
-    <footer className="bg-[#0B0F17] border-t border-slate-800 px-4 py-3 flex flex-col gap-2.5 shrink-0">
+    <footer className="bg-[#121212] border-t border-slate-800 px-4 py-3 flex flex-col gap-2.5 shrink-0">
       {/* Row 1: Temporal Player + Epoch Grouping + Spectral Band Selector */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Player Controls */}
@@ -93,7 +93,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
               }
               title={t.prev}
               aria-label={t.prev}
-              className="p-1.5 rounded border border-slate-700 bg-[#07090E] text-slate-200 hover:border-cyan-500 disabled:opacity-40 cursor-pointer"
+              className="p-1.5 rounded border border-slate-700 bg-[#0A0A0A] text-slate-200 hover:border-cyan-500 disabled:opacity-40 cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -118,7 +118,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
               }
               title={t.next}
               aria-label={t.next}
-              className="p-1.5 rounded border border-slate-700 bg-[#07090E] text-slate-200 hover:border-cyan-500 disabled:opacity-40 cursor-pointer"
+              className="p-1.5 rounded border border-slate-700 bg-[#0A0A0A] text-slate-200 hover:border-cyan-500 disabled:opacity-40 cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -130,7 +130,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
             className={`inline-flex items-center gap-1 px-2 py-1.5 rounded border text-xs transition-colors cursor-pointer ${
               loop
                 ? 'bg-cyan-500/15 border-cyan-500 text-cyan-200'
-                : 'bg-[#07090E] border-slate-700 text-slate-400 hover:text-slate-200'
+                : 'bg-[#0A0A0A] border-slate-700 text-slate-400 hover:text-slate-200'
             }`}
           >
             <Repeat className="w-3.5 h-3.5" aria-hidden="true" />
@@ -142,7 +142,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
             <select
               value={speed}
               onChange={(e) => onSpeedChange(Number(e.target.value))}
-              className="bg-[#07090E] border border-slate-700 rounded px-2 py-1 text-xs font-mono tabular-nums text-slate-100 outline-none focus:border-cyan-500"
+              className="bg-[#0A0A0A] border border-slate-700 rounded px-2 py-1 text-xs font-mono tabular-nums text-slate-100 outline-none focus:border-cyan-500"
             >
               {SPEEDS.map((s) => (
                 <option key={s} value={s}>
@@ -153,7 +153,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
           </label>
 
           {/* Epoch Co-add vs Raw Exposures Switch */}
-          <div className="flex items-center gap-1 bg-[#07090E] p-0.5 rounded border border-slate-800 text-xs">
+          <div className="flex items-center gap-1 bg-[#0A0A0A] p-0.5 rounded border border-slate-800 text-xs">
             <button
               type="button"
               onClick={() => {
@@ -192,7 +192,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
             className={`px-2.5 py-1 rounded border text-xs font-medium transition-colors cursor-pointer ${
               band === 0
                 ? 'bg-cyan-500/20 border-cyan-500 text-cyan-200'
-                : 'bg-[#07090E] border-slate-700 text-slate-300 hover:border-slate-500'
+                : 'bg-[#0A0A0A] border-slate-700 text-slate-300 hover:border-slate-500'
             }`}
           >
             {t.allBands}
@@ -208,7 +208,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
                 className={`px-2 py-1 rounded border text-xs font-mono tabular-nums transition-colors cursor-pointer ${
                   band === b
                     ? 'bg-cyan-500/20 border-cyan-500 text-cyan-200 font-semibold'
-                    : 'bg-[#07090E] border-slate-700 text-slate-300 hover:border-slate-500'
+                    : 'bg-[#0A0A0A] border-slate-700 text-slate-300 hover:border-slate-500'
                 }`}
               >
                 {t.bandPrefix}
@@ -244,7 +244,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
                 className={`px-1.5 py-0.5 rounded text-[10px] font-mono tabular-nums border whitespace-nowrap cursor-pointer ${
                   idx === currentIndex
                     ? 'bg-cyan-500/20 border-cyan-500 text-cyan-200'
-                    : 'bg-[#07090E] border-slate-800 text-slate-400 hover:text-slate-200'
+                    : 'bg-[#0A0A0A] border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
                 {f.epoch ? `${f.epoch}` : `MJD ${Math.round(f.mjd)}`}·B{f.band}
@@ -297,7 +297,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
           )}
 
           {currentFrame ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 font-mono tabular-nums text-[11px] bg-[#07090E] border border-slate-800 rounded px-3 py-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 font-mono tabular-nums text-[11px] bg-[#0A0A0A] border border-slate-800 rounded px-3 py-2">
               <div className="truncate">
                 <span className="text-slate-500">ID: </span>
                 <span className="text-slate-200">{currentFrame.id}</span>
@@ -359,11 +359,11 @@ export const BottomDock: React.FC<BottomDockProps> = ({
             </span>
             {activeTarget && (
               <span className="text-[10px] font-mono tabular-nums text-slate-400">
-                DR1:{activeTarget.irsaCoverage.dr1} / QR3:{activeTarget.irsaCoverage.qr3}
+                {formatIrsaCoverage(activeTarget, collectionsForTarget(activeTarget), t)}
               </span>
             )}
           </div>
-          <div className="bg-[#07090E] border border-slate-800 rounded px-3 py-2 text-[11px] text-slate-300 leading-relaxed">
+          <div className="bg-[#0A0A0A] border border-slate-800 rounded px-3 py-2 text-[11px] text-slate-300 leading-relaxed">
             {activeTarget ? (
               <div className="flex flex-col gap-1">
                 <span>{lang === 'es' ? activeTarget.notesEs : activeTarget.notesEn}</span>

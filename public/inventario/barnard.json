@@ -1,0 +1,40 @@
+{
+  "target": "barnard",
+  "total_images": 360,
+  "collections": {
+    "spherex_dr1": {
+      "collection": "spherex_dr1",
+      "images": 239,
+      "date_range": {
+        "start": "2025-08-15",
+        "end": "2026-05-05"
+      },
+      "visits": 7,
+      "by_band": {
+        "1": 42,
+        "2": 36,
+        "3": 42,
+        "4": 41,
+        "5": 37,
+        "6": 41
+      }
+    },
+    "spherex_qr3": {
+      "collection": "spherex_qr3",
+      "images": 121,
+      "date_range": {
+        "start": "2026-08-16",
+        "end": "2026-09-22"
+      },
+      "visits": 3,
+      "by_band": {
+        "1": 18,
+        "2": 25,
+        "3": 17,
+        "4": 18,
+        "5": 24,
+        "6": 19
+      }
+    }
+  }
+}

@@ -394,7 +394,13 @@ def b64(arreglo: np.ndarray) -> str:
     return base64.b64encode(np.ascontiguousarray(arreglo).tobytes()).decode("ascii")
 
 
-def bajar_recorte(url: str, centro: SkyCoord, tamano_grados: float) -> bytes:
+def bajar_recorte(
+    url: str,
+    centro: SkyCoord,
+    tamano_grados: float,
+    intentos: int = 4,
+    espera: int = 10,
+) -> bytes:
     """
     Baja el recorte FITS de IRSA o lo lee de la caché local si ya existe con el mismo centro y tamaño
 
@@ -403,6 +409,8 @@ def bajar_recorte(url: str, centro: SkyCoord, tamano_grados: float) -> bytes:
     `url`:str URL base de acceso al recorte en IRSA (`access_url`).
     `centro`:SkyCoord Centro fijo de recorte en ICRS.
     `tamano_grados`:float Tamaño angular del lado del recorte en grados.
+    `intentos`:int Número máximo de intentos de descarga ante errores transitorios.
+    `espera`:int Segundos base de espera progresiva entre reintentos.
 
     Returns
     -------
@@ -427,7 +435,7 @@ def bajar_recorte(url: str, centro: SkyCoord, tamano_grados: float) -> bytes:
         r.raise_for_status()  # dentro del reintento: IRSA devuelve 502/503 cuando está saturado
         return r
 
-    contenido = con_reintentos(pedir, intentos=4, espera=10, nombre="recorte").content
+    contenido = con_reintentos(pedir, intentos=intentos, espera=espera, nombre="recorte").content
     if not contenido.startswith(FIRMA_FITS):
         raise ValueError(
             f"La respuesta descargada para {clave} no es un archivo FITS válido (no empieza por 'SIMPLE  =')."
