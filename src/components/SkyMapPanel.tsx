@@ -9,7 +9,7 @@ const LOAD_TIMEOUT_MS = 15000;
 const SPHERE_FOV_DEG = 75;
 const TARGET_FOV_DEG = 3;
 const LOCATOR_CIRCLE_DEG = 1.5;
-const PLOT_ID = 'spherex-sky-hips';
+const PLOT_ID_PREFIX = 'spherex-sky-hips';
 const REGION_LAYER_ID = 'spherex-sky-target-marker';
 
 interface FireflyHipsRequest {
@@ -30,6 +30,7 @@ interface FireflyActions {
     selectMode?: Record<string, unknown>
   ) => void;
   dispatchDeleteRegionLayer?: (regionId: string, plotId?: string | string[]) => void;
+  dispatchDeletePlotView?: (args: { plotId: string }) => void;
 }
 
 interface FireflyApi {
@@ -139,7 +140,7 @@ export const SkyMapPanel: React.FC<SkyMapPanelProps> = ({
 }) => {
   const rawId = useId();
   const viewerId = `sky-hips-${rawId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
-  const bodyId = `${viewerId}-body`;
+  const bodyId = `sky-panel-body-${rawId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   const [isOpen, setIsOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -151,6 +152,7 @@ export const SkyMapPanel: React.FC<SkyMapPanelProps> = ({
   const [status, setStatus] = useState<ViewerStatus>(() => (isOpen ? 'loading' : 'idle'));
   const fireflyRef = useRef<FireflyApi | null>(null);
   const regionTimerRef = useRef<number | null>(null);
+  const plotIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -186,9 +188,14 @@ export const SkyMapPanel: React.FC<SkyMapPanelProps> = ({
     const raStr = ra.toFixed(6);
     const decStr = dec.toFixed(6);
 
+    // Firefly draws its own yellow crosshair at the position a plot was created with and does
+    // not move it when the same plot is re-centred. One plot per position keeps it on target.
+    const plotId = `${PLOT_ID_PREFIX}-${Math.round(ra * 1e4)}-${Math.round((dec + 90) * 1e4)}`;
+    const previousPlotId = plotIdRef.current;
+
     try {
       api.showHiPS(viewerId, {
-        plotId: PLOT_ID,
+        plotId,
         hipsRootUrl: HIPS_ROOT_URL,
         WorldPt: `${raStr};${decStr};EQ_J2000`,
         SizeInDeg: fovDeg,
@@ -206,9 +213,17 @@ export const SkyMapPanel: React.FC<SkyMapPanelProps> = ({
           // Green dot on the target: screen-sized, so it stays visible in the sphere view.
           `j2000; point ${raStr} ${decStr} # color=#22c55e point=circle 5 width=5`,
         ];
-        actions.dispatchDeleteRegionLayer?.(REGION_LAYER_ID, PLOT_ID);
-        actions.dispatchCreateRegionLayer(REGION_LAYER_ID, displayLabel, null, regions, PLOT_ID);
+        const regionLayerId = `${REGION_LAYER_ID}-${plotId}`;
+        actions.dispatchDeleteRegionLayer?.(regionLayerId, plotId);
+        actions.dispatchCreateRegionLayer(regionLayerId, displayLabel, null, regions, plotId);
       };
+
+      // Remove the previous target's plot; otherwise Firefly tiles both plots side by side.
+      if (previousPlotId && previousPlotId !== plotId) {
+        api.action?.dispatchDeleteRegionLayer?.(`${REGION_LAYER_ID}-${previousPlotId}`, previousPlotId);
+        api.action?.dispatchDeletePlotView?.({ plotId: previousPlotId });
+      }
+      plotIdRef.current = plotId;
 
       applyRegions();
       if (regionTimerRef.current !== null) {
