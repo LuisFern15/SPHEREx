@@ -122,7 +122,8 @@ export function getInitialUrlState(): UrlViewerState {
     i: Math.max(0, Math.floor(parseNum('i', 0))),
     flags: params.get('flags') === '1' ? 1 : 0,
     cat: params.get('cat') === '1' ? 1 : 0,
-    sim: params.get('sim') === '1' ? 1 : 0,
+    // Simulated data only in development builds; a shared link with sim=1 shows real data
+    sim: import.meta.env.DEV && params.get('sim') === '1' ? 1 : 0,
   };
 }
 

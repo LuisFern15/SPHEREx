@@ -131,6 +131,8 @@ export const TopBar: React.FC<TopBarProps> = ({
         </form>
 
         <div className="flex items-center gap-2 shrink-0">
+          {/* Simulated data is a development tool only: hidden on the public build */}
+          {import.meta.env.DEV && (
           <button
             type="button"
             onClick={onToggleSimMode}
@@ -144,6 +146,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             <Terminal className="w-3.5 h-3.5" aria-hidden="true" />
             <span>{t.devSimToggle}</span>
           </button>
+          )}
 
           <button
             type="button"
