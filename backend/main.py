@@ -37,7 +37,7 @@ app.add_middleware(
         "https://spherex.nls9.workers.dev",
     ],
     # Despliegues de vista previa de Cloudflare (<hash>-spherex.nls9.workers.dev)
-    allow_origin_regex=r"https://([a-z0-9]+-)?spherex\.nls9\.workers\.dev",
+    allow_origin_regex=r"https://([a-z0-9-]+-)?spherex\.nls9\.workers\.dev",
     allow_credentials=False,
     allow_methods=["GET"],
     allow_headers=["*"],
