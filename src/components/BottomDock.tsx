@@ -16,6 +16,7 @@ import {
   TargetPreset,
 } from '../types/spherex';
 import { summarizeFrameFlags } from '../utils/flags';
+import { SPEED_OPTIONS as SPEEDS } from '../utils/urlHash';
 
 interface BottomDockProps {
   t: TranslationStrings;
@@ -41,8 +42,6 @@ interface BottomDockProps {
   predictedOutOfBounds: boolean;
   activeTarget: TargetPreset | null;
 }
-
-const SPEEDS = [200, 400, 800];
 
 export const BottomDock: React.FC<BottomDockProps> = ({
   t,

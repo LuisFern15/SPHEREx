@@ -7,6 +7,16 @@ import {
 } from '../data/targets';
 import { CollectionName, CollectionShortCode, UrlViewerState } from '../types/spherex';
 
+/** Options offered by the field-size <select> (TopBar) and the speed <select> (BottomDock). */
+export const SIZE_OPTIONS = [100, 150, 200, 250, 300];
+export const SPEED_OPTIONS = [200, 400, 800];
+
+function snapToNearest(value: number, options: number[]): number {
+  return options.reduce((best, opt) =>
+    Math.abs(opt - value) < Math.abs(best - value) ? opt : best
+  );
+}
+
 export function clampFieldSize(size: number): number {
   if (!Number.isFinite(size)) return 200;
   return Math.max(100, Math.min(300, Math.round(size)));
@@ -103,10 +113,10 @@ export function getInitialUrlState(): UrlViewerState {
   return {
     ra,
     dec,
-    size: clampFieldSize(parseNum('size', defaults.size)),
+    size: snapToNearest(clampFieldSize(parseNum('size', defaults.size)), SIZE_OPTIONS),
     band: bandVal,
     col,
-    speed: Math.max(100, Math.min(2000, Math.round(parseNum('speed', defaults.speed)))),
+    speed: snapToNearest(parseNum('speed', defaults.speed), SPEED_OPTIONS),
     min,
     max,
     i: Math.max(0, Math.floor(parseNum('i', 0))),

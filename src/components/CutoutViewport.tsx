@@ -411,12 +411,25 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
     onHoverPixel({ x: px, y: py, flux, ra: sky.ra, dec: sky.dec, flags });
   };
 
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-    const next = Math.max(0.5, Math.min(8, Number((zoom * factor).toFixed(2))));
-    onZoomChange(next);
-  };
+  // Wheel zoom needs a native non-passive listener: React's onWheel is passive,
+  // so preventDefault() there cannot stop the page from scrolling.
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const onZoomChangeRef = useRef(onZoomChange);
+  onZoomChangeRef.current = onZoomChange;
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+      const next = Math.max(0.5, Math.min(8, Number((zoomRef.current * factor).toFixed(2))));
+      zoomRef.current = next;
+      onZoomChangeRef.current(next);
+    };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, []);
 
   return (
     <div
@@ -437,7 +450,6 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
         onHoverPixel(null);
       }}
       onPointerMove={handlePointerMove}
-      onWheel={handleWheel}
       className={`relative flex-1 bg-[#050505] overflow-hidden select-none ${
         dragging ? 'cursor-grabbing' : 'cursor-crosshair'
       }`}
@@ -626,8 +638,8 @@ export const CutoutViewport: React.FC<CutoutViewportProps> = ({
         {compareMode !== 'single' && (
           <div className="text-cyan-300">
             {compareMode === 'blink'
-              ? `${t.modeBlink}: ${blinkShowRef ? 'A (Ref)' : 'B (Actual)'}`
-              : `${t.modeDiff}${isDifference ? '' : ' (Bloqueado Δλ)'}`}
+              ? `${t.modeBlink}: ${blinkShowRef ? 'A (Ref)' : lang === 'es' ? 'B (Actual)' : 'B (Current)'}`
+              : `${t.modeDiff}${isDifference ? '' : lang === 'es' ? ' (Bloqueado Δλ)' : ' (Blocked Δλ)'}`}
           </div>
         )}
       </div>
