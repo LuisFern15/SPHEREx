@@ -54,7 +54,9 @@ export interface CatalogSource {
   label: string;
   ra: number;
   dec: number;
-  epoch?: number;
+  epoch?: number; // Julian year of ra/dec (Gaia DR3: 2016.0)
+  pmra?: number | null; // mas/yr, includes cos(dec)
+  pmdec?: number | null; // mas/yr
   note?: string;
   kind: 'target' | 'reference' | 'field';
 }
