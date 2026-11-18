@@ -4,7 +4,14 @@ export interface TranslationStrings {
   brandTitle: string;
   searchPlaceholder: string;
   searchButton: string;
+  searchingButton: string;
   invalidCoords: string;
+  resolveNotFound: string;
+  resolveServiceDown: string;
+  resolveBackendUnreachable: string;
+  objectPropagatedNote: string;
+  viewInSimbad: string;
+  closeObjectCard: string;
   fieldSizeLabel: string;
   collectionLabel: string;
   collectionBoth: string;
@@ -111,9 +118,16 @@ export interface TranslationStrings {
 export const TRANSLATIONS: Record<Language, TranslationStrings> = {
   es: {
     brandTitle: 'Explorador SPHEREx',
-    searchPlaceholder: 'RA Dec (decimal, 08h55m... o 08:55:...)',
+    searchPlaceholder: 'Nombre (Betelgeuse, M31) o RA Dec…',
     searchButton: 'Buscar',
+    searchingButton: 'Buscando…',
     invalidCoords: 'Formato inválido. Usa grados decimales o sexagesimal (h/d, espacios o :).',
+    resolveNotFound: 'No se encontró ningún objeto con ese nombre.',
+    resolveServiceDown: 'El servicio de nombres (CDS Sesame) no respondió. Inténtalo más tarde o introduce coordenadas.',
+    resolveBackendUnreachable: 'No se pudo conectar con el servidor para resolver el nombre.',
+    objectPropagatedNote: 'Posición llevada a {epoch} por movimiento propio (μ = {mu} mas/año)',
+    viewInSimbad: 'Ver en SIMBAD',
+    closeObjectCard: 'Cerrar ficha del objeto',
     fieldSizeLabel: 'Campo',
     collectionLabel: 'Colección',
     collectionBoth: 'Ambas',
@@ -221,9 +235,16 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
   },
   en: {
     brandTitle: 'SPHEREx Explorer',
-    searchPlaceholder: 'RA Dec (decimal, 08h55m... or 08:55:...)',
+    searchPlaceholder: 'Name (Betelgeuse, M31) or RA Dec…',
     searchButton: 'Search',
+    searchingButton: 'Searching…',
     invalidCoords: 'Invalid coordinate format. Use decimal degrees or sexagesimal (h/d, spaces, or :).',
+    resolveNotFound: 'No object found with that name.',
+    resolveServiceDown: 'Name resolver service (CDS Sesame) did not respond. Try again later or enter coordinates.',
+    resolveBackendUnreachable: 'Could not reach the backend server to resolve the name.',
+    objectPropagatedNote: 'Position propagated to {epoch} for proper motion (μ = {mu} mas/yr)',
+    viewInSimbad: 'View in SIMBAD',
+    closeObjectCard: 'Close object card',
     fieldSizeLabel: 'FOV',
     collectionLabel: 'Collection',
     collectionBoth: 'Both',
