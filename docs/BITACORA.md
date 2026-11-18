@@ -47,4 +47,5 @@ Formato de cada entrada:
   - El backend local se había iniciado sin recarga automática y no veía el endpoint nuevo (404). Solución: reiniciarlo con `--reload`.
   - Vega salió con el código `dS*` sin traducción. Solución: se añadieron 16 tipos de objeto más a la tabla.
 - **Observación para la capa 4:** Betelgeuse aparece saturada en SPHEREx (994 píxeles con OVERFLOW en un cuadro, como se esperaba). Es el primer caso de prueba para las alertas del asistente.
-- **Pendiente:** subir la rama, abrir un PR y volver a desplegar el backend en Render (el endpoint es nuevo).
+- **Publicación:** rama subida y PR abierto: https://github.com/LuisFern15/SPHEREx/pull/8 (commit 602f1a6).
+- **Pendiente:** fusionar el PR y volver a desplegar el backend en Render (el endpoint es nuevo).
