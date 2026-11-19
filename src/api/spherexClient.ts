@@ -6,6 +6,7 @@ import {
   FramesQueryResult,
   PhotometryResponse,
   RawSpherexFrame,
+  ResolvedObject,
 } from '../types/spherex';
 import { decodeBase64Float32LE, decodeBase64Uint32LE } from '../utils/binaryDecode';
 import { DEFAULT_FLAG_BITS } from '../utils/flags';
@@ -21,6 +22,22 @@ const STATIC_MODE_NOTE =
 const NO_STATIC_DATA_MSG =
   'Sin datos guardados para esta posición y no hay servidor de datos. / No stored data for this position and no data server.';
 const REQUEST_CANCELLED_MSG = 'Consulta cancelada. / Request cancelled.';
+
+export type ResolveNameErrorKind = 'not_found' | 'resolver_down' | 'backend_unreachable';
+
+export class ResolveNameError extends Error {
+  readonly kind: ResolveNameErrorKind;
+  readonly status?: number;
+  readonly detail?: string;
+
+  constructor(kind: ResolveNameErrorKind, message: string, status?: number, detail?: string) {
+    super(message);
+    this.name = 'ResolveNameError';
+    this.kind = kind;
+    this.status = status;
+    this.detail = detail;
+  }
+}
 
 function isJsonResponse(res: Response): boolean {
   const contentType = res.headers.get('content-type') ?? '';
@@ -386,6 +403,73 @@ export async function fetchTargets(signal?: AbortSignal) {
   } catch {
     return TARGET_PRESETS;
   }
+}
+
+export async function resolveName(name: string, signal?: AbortSignal): Promise<ResolvedObject> {
+  if (signal?.aborted) {
+    throw createAbortError();
+  }
+
+  const url = `${API_BASE}/api/resolve?name=${encodeURIComponent(name.trim())}`;
+
+  let res: Response;
+  try {
+    res = await fetch(url, { signal });
+  } catch (err: unknown) {
+    if (isAbortError(err) || signal?.aborted) {
+      throw err;
+    }
+    throw new ResolveNameError('backend_unreachable', BACKEND_UNAVAILABLE_MSG);
+  }
+
+  if (!isJsonResponse(res)) {
+    throw new ResolveNameError('backend_unreachable', BACKEND_UNAVAILABLE_MSG, res.status);
+  }
+
+  let body: unknown;
+  try {
+    body = await res.json();
+  } catch {
+    throw new ResolveNameError('backend_unreachable', BACKEND_UNAVAILABLE_MSG, res.status);
+  }
+
+  const detail =
+    body && typeof body === 'object' && 'detail' in body && (body as { detail?: unknown }).detail
+      ? String((body as { detail?: unknown }).detail)
+      : undefined;
+
+  if (res.status === 404) {
+    throw new ResolveNameError('not_found', detail ?? 'Object not found.', res.status, detail);
+  }
+  if (res.status >= 500) {
+    throw new ResolveNameError(
+      'resolver_down',
+      detail ?? `Name resolver error (HTTP ${res.status}).`,
+      res.status,
+      detail
+    );
+  }
+  if (!res.ok) {
+    throw new ResolveNameError(
+      'resolver_down',
+      detail ?? `HTTP ${res.status}`,
+      res.status,
+      detail
+    );
+  }
+
+  if (
+    !body ||
+    typeof body !== 'object' ||
+    typeof (body as Partial<ResolvedObject>).ra !== 'number' ||
+    !Number.isFinite((body as Partial<ResolvedObject>).ra) ||
+    typeof (body as Partial<ResolvedObject>).dec !== 'number' ||
+    !Number.isFinite((body as Partial<ResolvedObject>).dec)
+  ) {
+    throw new ResolveNameError('backend_unreachable', BACKEND_UNAVAILABLE_MSG, res.status);
+  }
+
+  return body as ResolvedObject;
 }
 
 export async function fetchFrames(params: {

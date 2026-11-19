@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional
 from consulta_viva import consultar_irsa_en_vivo
 from catalogo_gaia import DIR_CATALOGO, catalogo_gaia
+from resolver_nombres import LONGITUD_MAXIMA_NOMBRE, ErrorResolucion, resolver_nombre
 
 import numpy as np
 from astropy.coordinates import SkyCoord
@@ -533,6 +534,25 @@ def get_photometry(
         status_code=404,
         detail=f"Sin fotometría guardada para '{clean_target}' en '{clean_collection}'.{extra}",
     )
+
+
+@app.get("/api/resolve")
+def get_resolve(name: str = Query(..., min_length=1, max_length=LONGITUD_MAXIMA_NOMBRE)):
+    """Resuelve el nombre de un objeto (SIMBAD/NED/VizieR vía Sesame) a coordenadas actuales."""
+    try:
+        objeto = resolver_nombre(name)
+    except ErrorResolucion as error:
+        logger.warning("Sesame no disponible para '%s': %s", name, error)
+        raise HTTPException(
+            status_code=502,
+            detail="El servicio de nombres del CDS (Sesame) no respondió. Intenta de nuevo o usa coordenadas.",
+        )
+    if objeto is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No se encontró '{name.strip()}' en SIMBAD, NED ni VizieR.",
+        )
+    return objeto
 
 
 @app.get("/api/frames")

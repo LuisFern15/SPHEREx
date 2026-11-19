@@ -24,6 +24,7 @@ import {
   DecodedSpherexFrame,
   FramesQueryResult,
   Language,
+  ResolvedObject,
   TargetPreset,
   UrlViewerState,
 } from './types/spherex';
@@ -88,6 +89,7 @@ export default function App() {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [hoveredPixel, setHoveredPixel] = useState<HoveredPixelInfo | null>(null);
+  const [resolvedObject, setResolvedObject] = useState<ResolvedObject | null>(null);
 
   // Temporal & Epoch state
   const [coaddMode, setCoaddMode] = useState(true);
@@ -133,6 +135,7 @@ export default function App() {
   useEffect(() => {
     const onHashChange = () => {
       const next = getInitialUrlState();
+      setResolvedObject(null);
       setUrlState(next);
       setBandContrasts((prev) => ({
         ...prev,
@@ -339,6 +342,7 @@ export default function App() {
     const targetBand = target.defaultBand;
     const targetContrast =
       bandContrasts[targetBand] ?? DEFAULT_BAND_CONTRAST[targetBand] ?? DEFAULT_BAND_CONTRAST[0];
+    setResolvedObject(null);
     setPlaying(false);
     setZoom(1);
     setPan({ x: 0, y: 0 });
@@ -355,7 +359,7 @@ export default function App() {
     }));
   }, [bandContrasts]);
 
-  const handleSearchCoords = useCallback(
+  const applyCoordsSearch = useCallback(
     (ra: number, dec: number, size: number) => {
       const prevTarget = findMatchingTarget(urlState.ra, urlState.dec);
       const nextTarget = findMatchingTarget(ra, dec);
@@ -395,6 +399,22 @@ export default function App() {
       });
     },
     [urlState.ra, urlState.dec, urlState.size]
+  );
+
+  const handleSearchCoords = useCallback(
+    (ra: number, dec: number, size: number) => {
+      setResolvedObject(null);
+      applyCoordsSearch(ra, dec, size);
+    },
+    [applyCoordsSearch]
+  );
+
+  const handleResolvedObject = useCallback(
+    (obj: ResolvedObject, size: number) => {
+      setResolvedObject(obj);
+      applyCoordsSearch(obj.ra, obj.dec, size);
+    },
+    [applyCoordsSearch]
   );
 
   const handleSelectBand = useCallback(
@@ -501,12 +521,15 @@ export default function App() {
         collection={activeCollection}
         availableCollections={availableCollections}
         activeTargetId={activeTarget?.id ?? null}
+        resolvedObject={resolvedObject}
         simMode={urlState.sim === 1}
         onToggleSimMode={() =>
           setUrlState((prev) => ({ ...prev, sim: prev.sim === 1 ? 0 : 1, i: 0 }))
         }
         onSelectTarget={handleSelectTarget}
         onSearchCoords={handleSearchCoords}
+        onResolvedObject={handleResolvedObject}
+        onClearObject={() => setResolvedObject(null)}
         onChangeSize={(nextSize) =>
           setUrlState((prev) => ({ ...prev, size: clampFieldSize(nextSize), i: 0 }))
         }

@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Compass, Search, Terminal } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Compass, Loader2, Search, Terminal } from 'lucide-react';
+import { ResolveNameError, resolveName } from '../api/spherexClient';
 import { TARGET_PRESETS } from '../data/targets';
 import { TranslationStrings } from '../i18n/translations';
-import { Language, TargetPreset } from '../types/spherex';
+import { Language, ResolvedObject, TargetPreset } from '../types/spherex';
 import { parseCoordinates } from '../utils/coordinates';
 import { SIZE_OPTIONS } from '../utils/urlHash';
+import { ObjectCard } from './ObjectCard';
 
 interface TopBarProps {
   t: TranslationStrings;
@@ -16,10 +18,13 @@ interface TopBarProps {
   collection: string;
   availableCollections: string[];
   activeTargetId: string | null;
+  resolvedObject: ResolvedObject | null;
   simMode: boolean;
   onToggleSimMode: () => void;
   onSelectTarget: (target: TargetPreset) => void;
   onSearchCoords: (ra: number, dec: number, size: number) => void;
+  onResolvedObject: (obj: ResolvedObject, size: number) => void;
+  onClearObject: () => void;
   onChangeSize: (size: number) => void;
   onChangeCollection: (collection: string) => void;
 }
@@ -34,30 +39,103 @@ export const TopBar: React.FC<TopBarProps> = ({
   collection,
   availableCollections,
   activeTargetId,
+  resolvedObject,
   simMode,
   onToggleSimMode,
   onSelectTarget,
   onSearchCoords,
+  onResolvedObject,
+  onClearObject,
   onChangeSize,
   onChangeCollection,
 }) => {
   const [coordInput, setCoordInput] = useState(`${ra.toFixed(5)}, ${dec.toFixed(5)}`);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [resolving, setResolving] = useState(false);
+  const resolveAbortRef = useRef<AbortController | null>(null);
+  const lastResolvedCoordRef = useRef<{ ra: number; dec: number } | null>(null);
 
   useEffect(() => {
+    return () => {
+      resolveAbortRef.current?.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    const last = lastResolvedCoordRef.current;
+    if (
+      last &&
+      Math.abs(ra - last.ra) < 1e-5 &&
+      Math.abs(dec - last.dec) < 1e-5
+    ) {
+      lastResolvedCoordRef.current = null;
+      setErrorMsg(null);
+      return;
+    }
+    lastResolvedCoordRef.current = null;
     setCoordInput(`${ra.toFixed(5)}, ${dec.toFixed(5)}`);
     setErrorMsg(null);
   }, [ra, dec]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = parseCoordinates(coordInput);
-    if (!parsed) {
+    const trimmed = coordInput.trim();
+    if (!trimmed) {
+      resolveAbortRef.current?.abort();
+      resolveAbortRef.current = null;
+      setResolving(false);
       setErrorMsg(t.invalidCoords);
       return;
     }
+
+    const parsed = parseCoordinates(trimmed);
+    if (parsed) {
+      resolveAbortRef.current?.abort();
+      resolveAbortRef.current = null;
+      setResolving(false);
+      lastResolvedCoordRef.current = null;
+      setErrorMsg(null);
+      onSearchCoords(parsed.ra, parsed.dec, size);
+      return;
+    }
+
+    resolveAbortRef.current?.abort();
+    const controller = new AbortController();
+    resolveAbortRef.current = controller;
+    setResolving(true);
     setErrorMsg(null);
-    onSearchCoords(parsed.ra, parsed.dec, size);
+
+    try {
+      const obj = await resolveName(trimmed, controller.signal);
+      if (controller.signal.aborted || resolveAbortRef.current !== controller) {
+        return;
+      }
+      resolveAbortRef.current = null;
+      setResolving(false);
+      const targetRa = Number(obj.ra.toFixed(6));
+      const targetDec = Number(obj.dec.toFixed(6));
+      if (targetRa !== ra || targetDec !== dec) {
+        lastResolvedCoordRef.current = { ra: targetRa, dec: targetDec };
+      }
+      onResolvedObject(obj, size);
+    } catch (err: unknown) {
+      if (controller.signal.aborted || resolveAbortRef.current !== controller) {
+        return;
+      }
+      resolveAbortRef.current = null;
+      setResolving(false);
+      if (err instanceof ResolveNameError) {
+        if (err.kind === 'not_found') {
+          setErrorMsg(t.resolveNotFound);
+        } else if (err.kind === 'resolver_down') {
+          setErrorMsg(t.resolveServiceDown);
+        } else {
+          setErrorMsg(t.resolveBackendUnreachable);
+        }
+      } else {
+        setErrorMsg(t.resolveBackendUnreachable);
+      }
+    }
   };
 
   return (
@@ -123,10 +201,15 @@ export const TopBar: React.FC<TopBarProps> = ({
 
           <button
             type="submit"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-medium text-xs rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            disabled={resolving}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-60 disabled:cursor-not-allowed text-slate-950 font-medium text-xs rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
-            <Search className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>{t.searchButton}</span>
+            {resolving ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+            ) : (
+              <Search className="w-3.5 h-3.5" aria-hidden="true" />
+            )}
+            <span>{resolving ? t.searchingButton : t.searchButton}</span>
           </button>
         </form>
 
@@ -165,6 +248,15 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
       )}
 
+      {resolvedObject && (
+        <ObjectCard
+          object={resolvedObject}
+          lang={lang}
+          t={t}
+          onClose={onClearObject}
+        />
+      )}
+
       {/* Row 2: 5 Mandatory Benchmark Targets */}
       <div className="flex flex-wrap items-center gap-2 pt-0.5">
         <span className="text-xs text-slate-400 mr-1 whitespace-nowrap">{t.targetsLabel}:</span>
@@ -176,7 +268,13 @@ export const TopBar: React.FC<TopBarProps> = ({
               <button
                 key={target.id}
                 type="button"
-                onClick={() => onSelectTarget(target)}
+                onClick={() => {
+                  resolveAbortRef.current?.abort();
+                  resolveAbortRef.current = null;
+                  setResolving(false);
+                  lastResolvedCoordRef.current = null;
+                  onSelectTarget(target);
+                }}
                 className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                   isActive
                     ? 'bg-cyan-500/15 border-cyan-500 text-cyan-200'

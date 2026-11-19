@@ -195,3 +195,24 @@ export interface PhotometryResponse {
   measurements: PhotometryMeasurement[];
   provenance?: 'live' | 'cached' | 'static';
 }
+
+export interface ResolvedObject {
+  query: string;
+  name: string;
+  resolver: string;
+  object_type: string | null;
+  object_type_es: string | null;
+  object_type_en: string | null;
+  spectral_type: string | null;
+  ra_j2000: number;
+  dec_j2000: number;
+  pmra_mas_yr: number | null;
+  pmdec_mas_yr: number | null;
+  parallax_mas: number | null;
+  magnitudes: Record<string, number>;
+  ra: number;
+  dec: number;
+  propagated: boolean;
+  epoch: number;
+  simbad_url: string;
+}
